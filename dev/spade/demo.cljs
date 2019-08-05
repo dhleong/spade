@@ -1,5 +1,6 @@
 (ns spade.demo
-  (:require [reagent.core :as r]
+  (:require [clojure.string :as str]
+            [reagent.core :as r]
             [spade.core :refer [defclass]]))
 
 (defclass serenity []
@@ -7,9 +8,25 @@
 
   [:.title {:font-size "22pt"}])
 
+(defclass colorized [color]
+  ^{:key (str/upper-case color)}
+  {:height "20px"
+   :width "20px"
+   :background-color color})
+
+(defclass flex []
+  {:display 'flex})
+
 (defn view []
-  [:div {:class (serenity)}
-   [:div.title "Test"]])
+  [:<>
+   [:div {:class (serenity)}
+    [:div.title "Test"]]
+
+   [:div {:class (flex)}
+    [:div {:class (colorized "red")}]
+    [:div {:class (colorized "blue")}]
+    [:div {:class (colorized "green")}]]
+   ])
 
 (defn mount-root []
   (r/render [view] (.getElementById js/document "app")))

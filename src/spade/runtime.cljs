@@ -24,24 +24,17 @@
     (swap! *injected* assoc id obj)
     (update! obj css)))
 
-(defn ensure-style! [mode style-name factory args]
-  (let [prefix (str (case mode
-                      (:class :opts) "."
-                      :id "#")
-                    style-name)
-        css (apply factory prefix args)
-
-        existing (get @*injected* prefix)]
+(defn ensure-style! [mode base-style-name factory params]
+  (let [{css :css style-name :name} (apply factory base-style-name params params)
+        existing (get @*injected* style-name)]
 
     (if existing
       ; update existing style element
       (update! existing css)
 
       ; create a new element
-      (inject! prefix css))
+      (inject! style-name css))
 
     (case mode
       :class style-name
-      :opts {:class prefix}
-
-      prefix)))
+      :opts {:class style-name})))
