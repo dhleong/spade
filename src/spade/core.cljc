@@ -1,12 +1,6 @@
 (ns spade.core
-  (:require [spade.runtime :as runtime]
-            [spade.util :refer [factory->name build-style-name]]
+  (:require [spade.util :refer [factory->name build-style-name]]
             [garden.core :as garden]))
-
-(defn- compile-style-data [style-name elements]
-  {:css (garden/css elements)
-   :elements elements
-   :name style-name})
 
 (defn- transform-style [style style-name-var params-var]
   (let [name-creator `(#'build-style-name
@@ -14,8 +8,11 @@
                         ~(:key (meta (first style)))
                         ~params-var)
         name-var (gensym "name")]
-    `(let [~name-var ~name-creator]
-       (#'compile-style-data ~name-var ~(into [`(str "." ~name-var)] style)))))
+    `(let [~name-var ~name-creator
+           style# ~(into [`(str "." ~name-var)] style)]
+       {:css (garden/css style#)
+        :elements style#
+        :name ~name-var})))
 
 (defmacro defclass [class-name params & style]
   (let [factory-fn-name (symbol (str (name class-name) "-factory$"))
@@ -30,7 +27,7 @@
        ; class names/elements in some way. CSS vars?
        (let [factory-name# (factory->name ~factory-fn-name)]
          (defn ~class-name [& params#]
-           (runtime/ensure-style!
+           (spade.runtime/ensure-style!
              :class
              factory-name#
              ~factory-fn-name

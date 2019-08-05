@@ -40,9 +40,14 @@
     [:div {:class (colorized-with-key "green")}]]
 
    [:div {:class (flex)}
-    [:div {:class (colorized "green")}]
+    [:div {:class (colorized-with-key-in-block "red")}]
+    [:div {:class (colorized-with-key-in-block "blue")}]
+    [:div {:class (colorized-with-key-in-block "green")}]]
+
+   [:div {:class (flex)}
     [:div {:class (colorized "red")}]
-    [:div {:class (colorized "blue")}]]
+    [:div {:class (colorized "blue")}]
+    [:div {:class (colorized "green")}]]
 
    ])
 
