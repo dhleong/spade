@@ -8,8 +8,20 @@
 
   [:.title {:font-size "22pt"}])
 
-(defclass colorized [color]
+(defclass colorized-with-key [color]
   ^{:key (str/upper-case color)}
+  {:height "20px"
+   :width "20px"
+   :background-color color})
+
+(defclass colorized-with-key-in-block [color]
+  (let [k (str/upper-case color)]
+    ^{:key k}
+    {:height "20px"
+     :width "20px"
+     :background-color color}))
+
+(defclass colorized [color]
   {:height "20px"
    :width "20px"
    :background-color color})
@@ -23,9 +35,15 @@
     [:div.title "Test"]]
 
    [:div {:class (flex)}
+    [:div {:class (colorized-with-key "red")}]
+    [:div {:class (colorized-with-key "blue")}]
+    [:div {:class (colorized-with-key "green")}]]
+
+   [:div {:class (flex)}
+    [:div {:class (colorized "green")}]
     [:div {:class (colorized "red")}]
-    [:div {:class (colorized "blue")}]
-    [:div {:class (colorized "green")}]]
+    [:div {:class (colorized "blue")}]]
+
    ])
 
 (defn mount-root []

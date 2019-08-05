@@ -3,8 +3,9 @@
             [spade.util :refer [factory->name build-style-name]]
             [garden.core :as garden]))
 
-(defn compile-style-data [style-name elements]
+(defn- compile-style-data [style-name elements]
   {:css (garden/css elements)
+   :elements elements
    :name style-name})
 
 (defn- transform-style [style style-name-var params-var]
