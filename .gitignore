@@ -8,6 +8,8 @@ pom.xml
 /target/
 .lein-deps-sum
 .lein-repl-history
+.lein-failures
 .lein-plugins/
 .repl
 .nrepl-port
+package.json

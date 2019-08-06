@@ -13,7 +13,13 @@
   :plugins [[lein-figwheel "0.5.19"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
 
+  :doo {:paths {:karma "./node_modules/karma/bin/karma"}}
+
   :source-paths ["src"]
+  :test-paths ["test"]
+
+  :aliases {"test" ["do" ; "test"
+                         ["doo" "chrome-headless" "test" "once"]]}
 
   :cljsbuild {:builds
               [{:id "dev"
@@ -46,7 +52,21 @@
                 :compiler {:output-to "resources/public/js/compiled/spade.js"
                            :main spade.core
                            :optimizations :advanced
-                           :pretty-print false}}]}
+                           :pretty-print false}}
+
+               {:id "test"
+                :source-paths ["src" "dev" "test"]
+                :compiler {:main          spade.runner
+                           :output-to     "resources/public/js/compiled/test.js"
+                           :output-dir    "resources/public/js/compiled/test/out"
+
+                           ; npm is only needed for installing test dependencies
+                           :npm-deps {:karma "4.1.0"
+                                      :karma-cljs-test "0.1.0"
+                                      :karma-chrome-launcher "2.2.0"}
+                           :install-deps true
+
+                           :optimizations :none}}]}
 
   :figwheel {:css-dirs ["resources/public/css"] ;; watch and update CSS
 
@@ -60,6 +80,8 @@
                                   [figwheel-sidecar "0.5.19"]
                                   [cider/piggieback "0.4.1"]
                                   [reagent "0.8.1"]]
+
+                   :plugins [[lein-doo "0.1.10"]]
 
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]

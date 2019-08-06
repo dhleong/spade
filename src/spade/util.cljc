@@ -6,7 +6,7 @@
 (defn factory->name [factory]
   (-> (.-name factory)
       (str/replace "_factory$" "")
-      (str/replace "$" "-")))
+      (str/replace #"[_$]" "-")))
 
 (defn sanitize [s]
   (-> s
