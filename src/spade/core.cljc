@@ -1,18 +1,51 @@
 (ns spade.core
-  (:require [spade.util :refer [factory->name build-style-name]]
+  (:require [clojure.walk :refer [postwalk]]
+            [spade.util :refer [factory->name build-style-name]]
             [garden.core :as garden]))
 
+(defn extract-key [style]
+  (:key (meta (first style))))
+
+(defn- find-key-meta [style]
+  (postwalk
+    (fn [form]
+      (if (and (map? form)
+               (::key form))
+        form
+
+        (if-let [k (:key (meta form))]
+          {::key k}
+
+          form)))
+    style))
+
 (defn- transform-style [style style-name-var params-var]
-  (let [name-creator `(#'build-style-name
-                        ~style-name-var
-                        ~(:key (meta (first style)))
-                        ~params-var)
-        name-var (gensym "name")]
-    `(let [~name-var ~name-creator
-           style# ~(into [`(str "." ~name-var)] style)]
-       {:css (garden/css style#)
-        :elements style#
-        :name ~name-var})))
+  (let [has-key-meta? (find-key-meta style)
+        static-key (extract-key style)]
+    (if (or static-key
+            (not has-key-meta?))
+      ; if we can extract the key statically, that's better
+      (let [name-creator `(#'build-style-name
+                            ~style-name-var
+                            ~static-key
+                            ~params-var)
+            name-var (gensym "name")]
+        `(let [~name-var ~name-creator
+               style# ~(into [`(str "." ~name-var)] style)]
+           {:css (garden/css style#)
+            :elements style#
+            :name ~name-var}))
+
+      `(let [base-style# ~(vec style)
+             key# (:key (meta (first base-style#)))
+             style-name# (#'build-style-name
+                           ~style-name-var
+                           key#
+                           ~params-var)
+             full-style# (into [(str "." style-name#)] base-style#)]
+         {:css (garden/css full-style#)
+          :elements full-style#
+          :name style-name#}))))
 
 (defmacro defclass [class-name params & style]
   (let [factory-fn-name (symbol (str (name class-name) "-factory$"))

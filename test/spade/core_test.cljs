@@ -25,5 +25,5 @@
            (params "blue"))))
 
   (testing "Fancy :key test"
-    #_(is (= "spade-core-test-key-in-block_blue"
+    (is (= "spade-core-test-key-in-block_BLUE"
            (key-in-block "blue")))))
