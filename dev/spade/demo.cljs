@@ -1,7 +1,10 @@
 (ns spade.demo
   (:require [clojure.string :as str]
             [reagent.core :as r]
-            [spade.core :refer [defclass]]))
+            [spade.core :refer [defclass defglobal]]))
+
+(defglobal background
+  [:body {:background "#333"}])
 
 (defclass serenity []
   {:padding "8px"}

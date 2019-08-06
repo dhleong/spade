@@ -19,7 +19,7 @@
           form)))
     style))
 
-(defn- transform-style [style style-name-var params-var]
+(defn- transform-named-style [style style-name-var params-var]
   (let [has-key-meta? (find-key-meta style)
         static-key (extract-key style)]
     (if (or static-key
@@ -47,25 +47,55 @@
           :elements full-style#
           :name style-name#}))))
 
+(defn- transform-style [mode style style-name-var params-var]
+  (if (#{:global} mode)
+    `{:css (garden/css ~(vec style))
+      :elements ~(vec style)
+      :name ~style-name-var}
+    (transform-named-style style style-name-var params-var)))
+
+(defmulti ^:private declare-style
+  (fn [mode _class-name _factory-name-var _factory-fn-name]
+    (case mode
+      :global :global ; NOTE keyframes might also be global
+      :default)))
+(defmethod declare-style :global
+  [mode class-name factory-name-var factory-fn-name]
+  `(def ~class-name (spade.runtime/ensure-style!
+                      ~mode
+                      ~factory-name-var
+                      ~factory-fn-name
+                      nil)))
+(defmethod declare-style :default
+  [mode class-name factory-name-var factory-fn-name]
+  `(defn ~class-name [& params#]
+     (spade.runtime/ensure-style!
+       ~mode
+       ~factory-name-var
+       ~factory-fn-name
+       params#)))
+
 (defn- declare-style-fns [mode class-name params style]
+  {:pre [(symbol? class-name)
+         (or (vector? params)
+             (nil? params))]}
   (let [factory-fn-name (symbol (str (name class-name) "-factory$"))
         style-name-var (gensym "style-name")
         params-var (gensym "params")
-        factory-params (vec (concat [style-name-var params-var] params))]
+        factory-params (vec (concat [style-name-var params-var] params))
+        factory-name-var (gensym "factory-name")]
     `(do
        (defn ~factory-fn-name ~factory-params
-         ~(transform-style style style-name-var params-var))
+         ~(transform-style mode style style-name-var params-var))
 
-       (let [factory-name# (factory->name ~factory-fn-name)]
-         (defn ~class-name [& params#]
-           (spade.runtime/ensure-style!
-             ~mode
-             factory-name#
-             ~factory-fn-name
-             params#))))))
+       (let [~factory-name-var (factory->name ~factory-fn-name)]
+         ~(declare-style mode class-name factory-name-var factory-fn-name)))))
 
 (defmacro defclass [class-name params & style]
   (declare-style-fns :class class-name params style))
 
 (defmacro defattrs [class-name params & style]
   (declare-style-fns :attrs class-name params style))
+
+(defmacro defglobal [group-name & style]
+  (declare-style-fns :global group-name nil style))

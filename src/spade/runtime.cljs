@@ -13,7 +13,7 @@
 (defn inject! [id css]
   (let [head (.-head js/document)
         element (doto (js/document.createElement "style")
-                  (.setAttribute "spade-id" id))
+                  (.setAttribute "spade-id" (str id)))
         obj {:element element
              :id id}]
     (assert (some? head)
@@ -25,6 +25,7 @@
     (update! obj css)))
 
 (defn ensure-style! [mode base-style-name factory params]
+  ; TODO merge global styles
   (let [{css :css style-name :name} (apply factory base-style-name params params)
         existing (get @*injected* style-name)]
 
@@ -36,5 +37,6 @@
       (inject! style-name css))
 
     (case mode
+      :global css
       :class style-name
       :attrs {:class style-name})))
