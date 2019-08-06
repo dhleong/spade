@@ -18,6 +18,8 @@
   :source-paths ["src"]
   :test-paths ["test"]
 
+  :jar-exclusions [#"(?:^|\/)public\/"]
+
   :aliases {"test" ["do" ; "test"
                          ["doo" "chrome-headless" "test" "once"]]}
 
