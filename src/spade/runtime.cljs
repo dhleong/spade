@@ -1,11 +1,18 @@
 (ns ^{:author "Daniel Leong"
       :doc "spade.runtime"}
-  spade.runtime)
+  spade.runtime
+  (:require [garden.core :as garden]))
 
 (defonce
   ^{:private true
     :dynamic true}
   *injected* (atom {}))
+
+(defonce ^:dynamic *css-compile-flags*
+  {:pretty-print? goog.DEBUG})
+
+(defn compile-css [elements]
+  (garden/css *css-compile-flags* elements))
 
 (defn update! [obj css]
   (set! (.-innerHTML (:element obj)) css))
@@ -25,7 +32,6 @@
     (update! obj css)))
 
 (defn ensure-style! [mode base-style-name factory params]
-  ; TODO merge global styles
   (let [{css :css style-name :name} (apply factory base-style-name params params)
         existing (get @*injected* style-name)]
 

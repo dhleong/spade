@@ -1,7 +1,6 @@
 (ns spade.core
   (:require [clojure.walk :refer [postwalk]]
-            [spade.util :refer [factory->name build-style-name]]
-            [garden.core :as garden]))
+            [spade.util :refer [factory->name build-style-name]]))
 
 (defn extract-key [style]
   (:key (meta (first style))))
@@ -32,7 +31,7 @@
             name-var (gensym "name")]
         `(let [~name-var ~name-creator
                style# ~(into [`(str "." ~name-var)] style)]
-           {:css (garden/css style#)
+           {:css (spade.runtime/compile-css style#)
             :elements style#
             :name ~name-var}))
 
@@ -43,13 +42,13 @@
                            key#
                            ~params-var)
              full-style# (into [(str "." style-name#)] base-style#)]
-         {:css (garden/css full-style#)
+         {:css (spade.runtime/compile-css full-style#)
           :elements full-style#
           :name style-name#}))))
 
 (defn- transform-style [mode style style-name-var params-var]
   (if (#{:global} mode)
-    `{:css (garden/css ~(vec style))
+    `{:css (spade.runtime/compile-css ~(vec style))
       :elements ~(vec style)
       :name ~style-name-var}
     (transform-named-style style style-name-var params-var)))

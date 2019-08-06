@@ -6,6 +6,9 @@
 (defglobal background
   [:body {:background "#333"}])
 
+(defglobal text
+  [:body {:color "#fff"}])
+
 (defclass serenity []
   {:padding "8px"}
 
