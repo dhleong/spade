@@ -47,7 +47,7 @@
           :elements full-style#
           :name style-name#}))))
 
-(defmacro defclass [class-name params & style]
+(defn- declare-style-fns [mode class-name params style]
   (let [factory-fn-name (symbol (str (name class-name) "-factory$"))
         style-name-var (gensym "style-name")
         params-var (gensym "params")
@@ -56,12 +56,16 @@
        (defn ~factory-fn-name ~factory-params
          ~(transform-style style style-name-var params-var))
 
-       ; TODO *if* we accept params, they should probably modify the
-       ; class names/elements in some way. CSS vars?
        (let [factory-name# (factory->name ~factory-fn-name)]
          (defn ~class-name [& params#]
            (spade.runtime/ensure-style!
-             :class
+             ~mode
              factory-name#
              ~factory-fn-name
              params#))))))
+
+(defmacro defclass [class-name params & style]
+  (declare-style-fns :class class-name params style))
+
+(defmacro defattrs [class-name params & style]
+  (declare-style-fns :attrs class-name params style))

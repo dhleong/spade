@@ -37,4 +37,4 @@
 
     (case mode
       :class style-name
-      :opts {:class style-name})))
+      :attrs {:class style-name})))
