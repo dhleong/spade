@@ -1,4 +1,4 @@
-(defproject spade "0.1.0-SNAPSHOT"
+(defproject net.dhleong/spade "0.1.0-SNAPSHOT"
   :description "A nice tool to use in the Garden"
   :url "https://github.com/dhleong/spade"
   :license {:name "Eclipse Public License"
@@ -21,7 +21,7 @@
   :jar-exclusions [#"(?:^|\/)public\/"]
 
   :aliases {"test" ["do" ; "test"
-                         ["doo" "chrome-headless" "test" "once"]]}
+                    ["doo" "chrome-headless" "test" "once"]]}
 
   :cljsbuild {:builds
               [{:id "dev"
