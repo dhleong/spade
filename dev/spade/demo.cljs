@@ -1,7 +1,11 @@
 (ns spade.demo
   (:require [clojure.string :as str]
             [reagent.core :as r]
-            [spade.core :refer [defclass defglobal]]))
+            [spade.core :refer [defclass defglobal defkeyframes]]))
+
+(defkeyframes anim-frames
+  ["0%" {:opacity 0}]
+  ["100%" {:opacity 1}])
 
 (defglobal background
   [:body {:background "#333"}])
@@ -10,9 +14,12 @@
   [:body {:color "#fff"}])
 
 (defclass serenity []
+  (at-media {:min-width "750px"}
+    {:padding "80px"})
   {:padding "8px"}
 
-  [:.title {:font-size "22pt"}])
+  [:.title {:font-size "22pt"
+            :animation [[(anim-frames) "560ms" 'ease-in-out]]}])
 
 (defclass colorized-with-key [color]
   ^{:key (str/upper-case color)}

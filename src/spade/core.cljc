@@ -18,6 +18,21 @@
           form)))
     style))
 
+(def ^:private auto-imported-at-form?
+  #{'at-font-face
+    'at-import
+    'at-media
+    'at-supports})
+
+(defn- replace-at-forms [style]
+  (postwalk
+    (fn [element]
+      (if (and (symbol? element)
+               (auto-imported-at-form? element))
+        (symbol "garden.stylesheet" (name element))
+        element))
+    style))
+
 (defn- transform-named-style [style style-name-var params-var]
   (let [has-key-meta? (find-key-meta style)
         static-key (extract-key style)]
@@ -47,16 +62,28 @@
           :name style-name#}))))
 
 (defn- transform-style [mode style style-name-var params-var]
-  (if (#{:global} mode)
-    `{:css (spade.runtime/compile-css ~(vec style))
-      :elements ~(vec style)
-      :name ~style-name-var}
-    (transform-named-style style style-name-var params-var)))
+  (let [style (replace-at-forms style)]
+    (cond
+      (#{:global} mode)
+      `{:css (spade.runtime/compile-css ~(vec style))
+        :elements ~(vec style)
+        :name ~style-name-var}
+
+      (#{:keyframes} mode)
+      `{:css (spade.runtime/compile-css
+               (garden.stylesheet/at-keyframes
+                 ~style-name-var
+                 ~(vec style)))
+        :elements ~(vec style)
+        :name ~style-name-var}
+
+      :else
+      (transform-named-style style style-name-var params-var))))
 
 (defmulti ^:private declare-style
   (fn [mode _class-name _factory-name-var _factory-fn-name]
     (case mode
-      :global :global ; NOTE keyframes might also be global
+      (:global :keyframes) :global
       :default)))
 (defmethod declare-style :global
   [mode class-name factory-name-var factory-fn-name]
@@ -98,3 +125,6 @@
 
 (defmacro defglobal [group-name & style]
   (declare-style-fns :global group-name nil style))
+
+(defmacro defkeyframes [keyframes-name & style]
+  (declare-style-fns :keyframes keyframes-name nil style))

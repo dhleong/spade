@@ -1,7 +1,7 @@
 (ns spade.core-test
   (:require [cljs.test :refer-macros [deftest testing is]]
             [clojure.string :as str]
-            [spade.core :refer [defattrs defclass defglobal]]))
+            [spade.core :refer [defattrs defclass defglobal defkeyframes]]))
 
 (defclass computed-key [color]
   ^{:key (str/upper-case color)}
@@ -41,8 +41,29 @@
 (defglobal global-1
   [:body {:background "blue"}])
 
+(defglobal global-2
+  (at-media {:min-width "42px"}
+    [:body {:background "white"}]))
+
 (deftest defglobal-test
   (testing "Declare const var with style from global"
     (is (string? global-1))
     (is (= "body {\n  background: blue;\n}"
-           global-1))))
+           global-1)))
+
+  (testing "Support at-media automatically"
+    (is (str/starts-with?
+          global-2
+          "@media (min-width: 42px) {"))))
+
+
+(defkeyframes key-frames
+  [:from {:opacity 0}])
+
+(deftest defkeyframes-test
+  (testing "Return keyframes name from defkeyframes"
+    (is (fn? key-frames))
+    (is (= "spade-core-test-key-frames"
+           (key-frames)))))
+
+

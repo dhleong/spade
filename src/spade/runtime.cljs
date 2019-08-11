@@ -43,6 +43,6 @@
       (inject! style-name css))
 
     (case mode
-      :global css
-      :class style-name
-      :attrs {:class style-name})))
+      :attrs {:class style-name}
+      (:class :keyframes) style-name
+      :global css)))
