@@ -47,7 +47,6 @@
         `(let [~name-var ~name-creator
                style# ~(into [`(str "." ~name-var)] style)]
            {:css (spade.runtime/compile-css style#)
-            :elements style#
             :name ~name-var}))
 
       `(let [base-style# ~(vec style)
@@ -58,7 +57,6 @@
                            ~params-var)
              full-style# (into [(str "." style-name#)] base-style#)]
          {:css (spade.runtime/compile-css full-style#)
-          :elements full-style#
           :name style-name#}))))
 
 (defn- transform-style [mode style style-name-var params-var]
@@ -66,7 +64,6 @@
     (cond
       (#{:global} mode)
       `{:css (spade.runtime/compile-css ~(vec style))
-        :elements ~(vec style)
         :name ~style-name-var}
 
       (#{:keyframes} mode)
@@ -74,7 +71,6 @@
                (garden.stylesheet/at-keyframes
                  ~style-name-var
                  ~(vec style)))
-        :elements ~(vec style)
         :name ~style-name-var}
 
       :else
