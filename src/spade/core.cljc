@@ -79,15 +79,24 @@
 (defmulti ^:private declare-style
   (fn [mode _class-name _factory-name-var _factory-fn-name]
     (case mode
-      (:global :keyframes) :global
+      :global :static
+      :keyframes :no-args
       :default)))
-(defmethod declare-style :global
+(defmethod declare-style :static
   [mode class-name factory-name-var factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
                       ~mode
                       ~factory-name-var
                       ~factory-fn-name
                       nil)))
+(defmethod declare-style :no-args
+  [mode class-name factory-name-var factory-fn-name]
+  `(defn ~class-name []
+     (spade.runtime/ensure-style!
+       ~mode
+       ~factory-name-var
+       ~factory-fn-name
+       nil)))
 (defmethod declare-style :default
   [mode class-name factory-name-var factory-fn-name]
   `(defn ~class-name [& params#]
