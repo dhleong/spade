@@ -100,8 +100,8 @@
       :global :static
       :keyframes :no-args
       (cond
-        (every? symbol? params) :default
         (some #{'&} params) :variadic
+        (every? symbol? params) :default
         :else :destructured))))
 (defmethod declare-style :static
   [mode class-name _ factory-name-var factory-fn-name]

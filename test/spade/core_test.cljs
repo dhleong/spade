@@ -151,5 +151,5 @@
            (destructured {:c "blue" :b "red"}))))
 
   (testing "Don't barf on Variadic args"
-    (is (= "spade-core-test-variadic_bluegreen"
-           (variadic "blue" "green")))))
+    (is (= "spade-core-test-variadic_cyanmagentayellow"
+           (variadic "cyan" "magenta" "yellow")))))
