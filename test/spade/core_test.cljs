@@ -121,4 +121,9 @@
       (is (true? (str/includes? generated
                                 "background:"))))))
 
-
+(deftest function-meta-test
+  (testing "arglists"
+    (is (= '([color])
+           (:arglists (meta #'params))))
+    (is (= '([])
+           (:arglists (meta #'fixed-style-attrs))))))

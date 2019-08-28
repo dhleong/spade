@@ -95,20 +95,20 @@
       (transform-named-style style style-name-var params-var))))
 
 (defmulti ^:private declare-style
-  (fn [mode _class-name _factory-name-var _factory-fn-name]
+  (fn [mode _class-name _params _factory-name-var _factory-fn-name]
     (case mode
       :global :static
       :keyframes :no-args
       :default)))
 (defmethod declare-style :static
-  [mode class-name factory-name-var factory-fn-name]
+  [mode class-name _ factory-name-var factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
                       ~mode
                       ~factory-name-var
                       ~factory-fn-name
                       nil)))
 (defmethod declare-style :no-args
-  [mode class-name factory-name-var factory-fn-name]
+  [mode class-name _ factory-name-var factory-fn-name]
   `(defn ~class-name []
      (spade.runtime/ensure-style!
        ~mode
@@ -116,13 +116,13 @@
        ~factory-fn-name
        nil)))
 (defmethod declare-style :default
-  [mode class-name factory-name-var factory-fn-name]
-  `(defn ~class-name [& params#]
+  [mode class-name params factory-name-var factory-fn-name]
+  `(defn ~class-name ~params
      (spade.runtime/ensure-style!
        ~mode
        ~factory-name-var
        ~factory-fn-name
-       params#)))
+       ~params)))
 
 (defn- declare-style-fns [mode class-name params style]
   {:pre [(symbol? class-name)
@@ -138,7 +138,7 @@
          ~(transform-style mode style style-name-var params-var))
 
        (let [~factory-name-var (factory->name ~factory-fn-name)]
-         ~(declare-style mode class-name factory-name-var factory-fn-name)))))
+         ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
 
 (defmacro defclass [class-name params & style]
   (declare-style-fns :class class-name params style))
