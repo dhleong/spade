@@ -95,34 +95,65 @@
       (transform-named-style style style-name-var params-var))))
 
 (defmulti ^:private declare-style
-  (fn [mode _class-name _factory-name-var _factory-fn-name]
+  (fn [mode _class-name params _factory-name-var _factory-fn-name]
     (case mode
       :global :static
       :keyframes :no-args
-      :default)))
+      (cond
+        (some #{'&} params) :variadic
+        (every? symbol? params) :default
+        :else :destructured))))
 (defmethod declare-style :static
-  [mode class-name factory-name-var factory-fn-name]
+  [mode class-name _ factory-name-var factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
                       ~mode
                       ~factory-name-var
                       ~factory-fn-name
                       nil)))
 (defmethod declare-style :no-args
-  [mode class-name factory-name-var factory-fn-name]
+  [mode class-name _ factory-name-var factory-fn-name]
   `(defn ~class-name []
      (spade.runtime/ensure-style!
        ~mode
        ~factory-name-var
        ~factory-fn-name
        nil)))
-(defmethod declare-style :default
-  [mode class-name factory-name-var factory-fn-name]
+(defmethod declare-style :destructured
+  [mode class-name params factory-name-var factory-fn-name]
+  ; good case; since there's no variadic args, we can generate an :arglists
+  ; meta and a simplified params list that we can forward simply
+  (let [raw-params (->> (range (count params))
+                        (map (fn [idx]
+                               (gensym (str "param-" idx "-"))))
+                        vec)]
+    `(defn ~class-name
+       {:arglists (quote ~(list params))}
+       ~raw-params
+       (spade.runtime/ensure-style!
+         ~mode
+         ~factory-name-var
+         ~factory-fn-name
+         ~raw-params))))
+(defmethod declare-style :variadic
+  [mode class-name _params factory-name-var factory-fn-name]
+  ; dumb case; with a variadic params vector, any :arglists we
+  ; provide gets ignored, so we just simply collect them all
+  ; and pass the list as-is
   `(defn ~class-name [& params#]
      (spade.runtime/ensure-style!
        ~mode
        ~factory-name-var
        ~factory-fn-name
        params#)))
+(defmethod declare-style :default
+  [mode class-name params factory-name-var factory-fn-name]
+  ; best case; simple params means we can use them directly
+  `(defn ~class-name ~params
+     (spade.runtime/ensure-style!
+       ~mode
+       ~factory-name-var
+       ~factory-fn-name
+       ~params)))
 
 (defn- declare-style-fns [mode class-name params style]
   {:pre [(symbol? class-name)
@@ -138,7 +169,7 @@
          ~(transform-style mode style style-name-var params-var))
 
        (let [~factory-name-var (factory->name ~factory-fn-name)]
-         ~(declare-style mode class-name factory-name-var factory-fn-name)))))
+         ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
 
 (defmacro defclass [class-name params & style]
   (declare-style-fns :class class-name params style))
