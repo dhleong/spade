@@ -51,54 +51,82 @@
       (assoc base :composes composition)
       base)))
 
-(defn- transform-named-style [style style-name-var params-var]
+(defn- build-style-naming-let
+  [style params original-style-name-var params-var]
   (let [has-key-meta? (find-key-meta style)
         static-key (extract-key style)
-        [composition style] (extract-composes style)
-        name-var (gensym "name")
-        style-var (gensym "style")]
-    (if (or static-key
-            (not has-key-meta?))
+        name-var (gensym "name")]
+    (cond
+      ; easiest case: no params? no need to call build-style-name
+      (nil? (seq params))
+      [nil original-style-name-var nil]
+
+      (or static-key
+          (not has-key-meta?))
       ; if we can extract the key statically, that's better
-      (let [name-creator `(#'build-style-name
-                            ~style-name-var
-                            ~static-key
-                            ~params-var)]
-        `(let [~name-var ~name-creator
-               ~style-var ~(into [`(str "." ~name-var)] style)]
-           ~(with-composition composition name-var style-var)))
+      [nil name-var `[~name-var (#'build-style-name
+                                  ~original-style-name-var
+                                  ~static-key
+                                  ~params-var)]]
 
-      `(let [base-style# ~(vec style)
-             key# (:key (meta (first base-style#)))
-             ~name-var (#'build-style-name
-                         ~style-name-var
-                         key#
-                         ~params-var)
-             ~style-var (into [(str "." ~name-var)] base-style#)]
-         ~(with-composition composition name-var style-var)))))
+      :else
+      (let [base-style-var (gensym "base-style")]
+        [base-style-var name-var `[~base-style-var ~(vec style)
+                                   key# (:key (meta (first ~base-style-var)))
+                                   ~name-var (#'build-style-name
+                                               ~original-style-name-var
+                                               key#
+                                               ~params-var)]]))))
 
-(defn- transform-style [mode style style-name-var params-var]
+(defn- transform-named-style [style params style-name-var params-var]
+  (let [[composition style] (extract-composes style)
+        style-var (gensym "style")
+        [base-style-var name-var name-let] (build-style-naming-let
+                                             style params style-name-var
+                                             params-var)
+        style-decl (if base-style-var
+                     `(into [(str "." ~name-var)] ~base-style-var)
+                     (into [`(str "." ~name-var)] style))]
+    `(let ~(vec (concat name-let
+                        [style-var style-decl]))
+       ~(with-composition composition name-var style-var))))
+
+(defn- transform-keyframes-style [style params style-name-var params-var]
+  (let [[style-var name-var style-naming-let] (build-style-naming-let
+                                                style params style-name-var
+                                                params-var)
+        info-map `{:css (spade.runtime/compile-css
+                          (garden.stylesheet/at-keyframes
+                            ~name-var
+                            ~(or style-var
+                                 (vec style))))
+                   :name ~name-var}]
+
+    ; this (let) might get compiled out in advanced mode anyway, but
+    ; let's just generate simpler code instead of having a redundant
+    ; (let) if the keyframes take no params
+    (if style-naming-let
+      `(let ~style-naming-let ~info-map)
+      info-map)))
+
+(defn- transform-style [mode style params style-name-var params-var]
   (let [style (replace-at-forms style)]
     (cond
       (#{:global} mode)
       `{:css (spade.runtime/compile-css ~(vec style))
         :name ~style-name-var}
 
+      ; keyframes are a bit of a special case
       (#{:keyframes} mode)
-      `{:css (spade.runtime/compile-css
-               (garden.stylesheet/at-keyframes
-                 ~style-name-var
-                 ~(vec style)))
-        :name ~style-name-var}
+      (transform-keyframes-style style params style-name-var params-var)
 
       :else
-      (transform-named-style style style-name-var params-var))))
+      (transform-named-style style params style-name-var params-var))))
 
 (defmulti ^:private declare-style
   (fn [mode _class-name params _factory-name-var _factory-fn-name]
     (case mode
       :global :static
-      :keyframes :no-args
       (cond
         (some #{'&} params) :variadic
         (every? symbol? params) :default
@@ -166,7 +194,7 @@
         factory-name-var (gensym "factory-name")]
     `(do
        (defn ~factory-fn-name ~factory-params
-         ~(transform-style mode style style-name-var params-var))
+         ~(transform-style mode style params style-name-var params-var))
 
        (let [~factory-name-var (factory->name ~factory-fn-name)]
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
@@ -180,5 +208,5 @@
 (defmacro defglobal [group-name & style]
   (declare-style-fns :global group-name nil style))
 
-(defmacro defkeyframes [keyframes-name & style]
-  (declare-style-fns :keyframes keyframes-name nil style))
+(defmacro defkeyframes [keyframes-name params & style]
+  (declare-style-fns :keyframes keyframes-name params style))

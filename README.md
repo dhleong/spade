@@ -119,7 +119,7 @@ Spade supports `@media` queries in the exact same way you see them in the [garde
 Spade even supports generating `@keyframes` just like you'd expect:
 
 ```clojure
-(defkeyframes anim-frames
+(defkeyframes anim-frames []
   ["0%" {:opacity 0}]
   ["100%" {:opacity 1}])
 ```

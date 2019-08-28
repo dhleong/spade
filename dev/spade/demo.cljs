@@ -3,9 +3,13 @@
             [reagent.core :as r]
             [spade.core :refer [defclass defattrs defglobal defkeyframes]]))
 
-(defkeyframes anim-frames
+(defkeyframes anim-frames []
   ["0%" {:opacity 0}]
   ["100%" {:opacity 1}])
+
+(defkeyframes parameterized-anim-frames [start end]
+  ["0%" {:opacity start}]
+  ["100%" {:opacity end}])
 
 (defglobal background
   [:body {:background "#333"}])
@@ -19,7 +23,7 @@
   {:padding "8px"}
 
   [:.title {:font-size "22pt"
-            :animation [[(anim-frames) "560ms" 'ease-in-out]]}])
+            :animation [[(parameterized-anim-frames 0 0.5) "560ms" 'ease-in-out]]}])
 
 (defclass colorized-with-key [color]
   ^{:key (str/upper-case color)}
