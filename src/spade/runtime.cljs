@@ -36,9 +36,23 @@
   (if-not composed
     style-name
     (str/join " "
-              (if (seq? composed)
-                (into composed style-name)
-                [composed style-name]))))
+              (->>
+                (if (seq? composed)
+                  (into composed style-name)
+                  [composed style-name])
+                (map (fn [item]
+                       (cond
+                         (string? item) item
+
+                         ; unpack a defattrs
+                         (and (map? item)
+                              (string? (:class item)))
+                         (:class item)
+
+                         :else
+                         (throw (js/Error.
+                                  (str "Invalid argument to :composes key:"
+                                       item))))))))))
 
 (defn ensure-style! [mode base-style-name factory params]
   (let [{css :css style-name :name :as info} (apply factory base-style-name params params)
