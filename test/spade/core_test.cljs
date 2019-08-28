@@ -57,14 +57,22 @@
           "@media (min-width: 42px) {"))))
 
 
-(defkeyframes key-frames
+(defkeyframes key-frames []
   [:from {:opacity 0}])
+
+(defkeyframes parameterized-key-frames [from]
+  [:from {:opacity from}])
 
 (deftest defkeyframes-test
   (testing "Return keyframes name from defkeyframes"
     (is (fn? key-frames))
     (is (= "spade-core-test-key-frames"
-           (key-frames)))))
+           (key-frames))))
+
+  (testing "Return dynamic keyframes name from parameterized defkeyframes"
+    (is (fn? key-frames))
+    (is (= (str "spade-core-test-parameterized-key-frames_" (hash [0]))
+           (parameterized-key-frames 0)))))
 
 (defclass composed [color]
   ^{:key color}
