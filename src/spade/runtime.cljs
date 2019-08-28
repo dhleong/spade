@@ -1,7 +1,8 @@
 (ns ^{:author "Daniel Leong"
       :doc "spade.runtime"}
   spade.runtime
-  (:require [garden.core :as garden]))
+  (:require [clojure.string :as str]
+            [garden.core :as garden]))
 
 (defonce
   ^{:private true
@@ -31,8 +32,16 @@
     (swap! *injected* assoc id obj)
     (update! obj css)))
 
+(defn- compose-names [{style-name :name composed :composes}]
+  (if-not composed
+    style-name
+    (str/join " "
+              (if (seq? composed)
+                (into composed style-name)
+                [composed style-name]))))
+
 (defn ensure-style! [mode base-style-name factory params]
-  (let [{css :css style-name :name} (apply factory base-style-name params params)
+  (let [{css :css style-name :name :as info} (apply factory base-style-name params params)
         existing (get @*injected* style-name)]
 
     (if existing
@@ -43,6 +52,6 @@
       (inject! style-name css))
 
     (case mode
-      :attrs {:class style-name}
-      (:class :keyframes) style-name
+      :attrs {:class (compose-names info)}
+      (:class :keyframes) (compose-names info)
       :global css)))
