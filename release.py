@@ -95,7 +95,7 @@ if version.endswith("SNAPSHOT"):
     print "May not release SNAPSHOT versions (got %s)" % version
     sys.exit(1)
 else:
-    print version
+    print "Testing version", version
 
 versionTag = git.Tag(version)
 
