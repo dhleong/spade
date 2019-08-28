@@ -121,9 +121,35 @@
       (is (true? (str/includes? generated
                                 "background:"))))))
 
+(defclass destructured [{:keys [c b]}]
+  ^{:key (str c "_" b)}
+  {:color c
+   :background b})
+
+(defn foo {:arglists '([a b c])}
+  [& args]
+  (println args))
+
 (deftest function-meta-test
-  (testing "arglists"
+  (testing "Simple arglists"
     (is (= '([color])
            (:arglists (meta #'params))))
     (is (= '([])
-           (:arglists (meta #'fixed-style-attrs))))))
+           (:arglists (meta #'fixed-style-attrs)))))
+
+  (testing "Destructuring arglists"
+    (is (= '([{:keys [c b]}])
+           (:arglists (meta #'destructured))))))
+
+(defclass variadic [& others]
+  ^{:key (str/join others)}
+  {:content (str others)})
+
+(deftest destructuring-factory-test
+  (testing "Destructure args"
+    (is (= "spade-core-test-destructured_blue_red"
+           (destructured {:c "blue" :b "red"}))))
+
+  (testing "Don't barf on Variadic args"
+    (is (= "spade-core-test-variadic_bluegreen"
+           (variadic "blue" "green")))))
