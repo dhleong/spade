@@ -1,6 +1,6 @@
 # spade [![Clojars Project](https://img.shields.io/clojars/v/net.dhleong/spade.svg?style=flat)](https://clojars.org/net.dhleong/spade) [![Build Status](http://img.shields.io/travis/dhleong/spade.svg?style=flat)](https://travis-ci.org/dhleong/spade)
 
-**A nice tool to use in the Garden**
+*A nice tool to use in the Garden*
 
 ## What?
 
