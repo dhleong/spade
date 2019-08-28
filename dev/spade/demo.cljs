@@ -1,7 +1,7 @@
 (ns spade.demo
   (:require [clojure.string :as str]
             [reagent.core :as r]
-            [spade.core :refer [defclass defglobal defkeyframes]]))
+            [spade.core :refer [defclass defattrs defglobal defkeyframes]]))
 
 (defkeyframes anim-frames
   ["0%" {:opacity 0}]
@@ -42,6 +42,9 @@
 (defclass flex []
   {:display 'flex})
 
+(defattrs composed-attrs []
+  {:composes (flex)})
+
 (defn view []
   [:<>
    [:div {:class (serenity)}
@@ -58,6 +61,11 @@
     [:div {:class (colorized-with-key-in-block "green")}]]
 
    [:div {:class (flex)}
+    [:div {:class (colorized "red")}]
+    [:div {:class (colorized "blue")}]
+    [:div {:class (colorized "green")}]]
+
+   [:div (composed-attrs)
     [:div {:class (colorized "red")}]
     [:div {:class (colorized "blue")}]
     [:div {:class (colorized "green")}]]

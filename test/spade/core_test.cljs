@@ -66,4 +66,59 @@
     (is (= "spade-core-test-key-frames"
            (key-frames)))))
 
+(defclass composed [color]
+  ^{:key color}
+  {:composes (computed-key color)
+   :background color})
+
+(deftest defclass-compose-test
+  (testing "computed-key test"
+    (is (= "spade-core-test-computed-key_BLUE spade-core-test-composed_blue"
+           (composed "blue")))
+
+    (let [generated (:css (composed-factory$ "" ["blue"] "blue"))]
+      (is (false? (str/includes? generated
+                                 "color:")))
+      (is (false? (str/includes? generated
+                                 "composes:")))
+      (is (true? (str/includes? generated
+                                "background:"))))))
+
+
+(defattrs composed-attrs [color]
+  ^{:key color}
+  {:composes (computed-key color)
+   :background color})
+
+(defclass compose-ception []
+  {:composes (composed-attrs "blue")
+   :background "#333"})
+
+(deftest defattrs-compose-test
+  (testing "computed-key test"
+    (is (= "spade-core-test-computed-key_BLUE spade-core-test-composed-attrs_blue"
+           (:class (composed-attrs "blue"))))
+
+    (let [generated (:css (composed-attrs-factory$ "" ["blue"] "blue"))]
+      (is (false? (str/includes? generated
+                                 "color:")))
+      (is (false? (str/includes? generated
+                                 "composes:")))
+      (is (true? (str/includes? generated
+                                "background:")))))
+
+  (testing "compose a defattrs"
+    (is (= ["spade-core-test-computed-key_BLUE"
+            "spade-core-test-composed-attrs_blue"
+            "spade-core-test-compose-ception"]
+           (str/split (compose-ception) #" ")))
+
+    (let [generated (:css (composed-attrs-factory$ "" ["blue"] "blue"))]
+      (is (false? (str/includes? generated
+                                 "color:")))
+      (is (false? (str/includes? generated
+                                 "composes:")))
+      (is (true? (str/includes? generated
+                                "background:"))))))
+
 

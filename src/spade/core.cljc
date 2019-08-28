@@ -33,31 +33,49 @@
         element))
     style))
 
+(defn- extract-composes [style]
+  (if-let [composes (when (map? (first style))
+                      (:composes (first style)))]
+    [composes
+
+     (-> style
+         vec
+         (update 0 dissoc :composes))]
+
+    [nil style]))
+
+(defn- with-composition [composition name-var style-var]
+  (let [base {:css `(spade.runtime/compile-css ~style-var)
+              :name name-var}]
+    (if composition
+      (assoc base :composes composition)
+      base)))
+
 (defn- transform-named-style [style style-name-var params-var]
   (let [has-key-meta? (find-key-meta style)
-        static-key (extract-key style)]
+        static-key (extract-key style)
+        [composition style] (extract-composes style)
+        name-var (gensym "name")
+        style-var (gensym "style")]
     (if (or static-key
             (not has-key-meta?))
       ; if we can extract the key statically, that's better
       (let [name-creator `(#'build-style-name
                             ~style-name-var
                             ~static-key
-                            ~params-var)
-            name-var (gensym "name")]
+                            ~params-var)]
         `(let [~name-var ~name-creator
-               style# ~(into [`(str "." ~name-var)] style)]
-           {:css (spade.runtime/compile-css style#)
-            :name ~name-var}))
+               ~style-var ~(into [`(str "." ~name-var)] style)]
+           ~(with-composition composition name-var style-var)))
 
       `(let [base-style# ~(vec style)
              key# (:key (meta (first base-style#)))
-             style-name# (#'build-style-name
-                           ~style-name-var
-                           key#
-                           ~params-var)
-             full-style# (into [(str "." style-name#)] base-style#)]
-         {:css (spade.runtime/compile-css full-style#)
-          :name style-name#}))))
+             ~name-var (#'build-style-name
+                         ~style-name-var
+                         key#
+                         ~params-var)
+             ~style-var (into [(str "." ~name-var)] base-style#)]
+         ~(with-composition composition name-var style-var)))))
 
 (defn- transform-style [mode style style-name-var params-var]
   (let [style (replace-at-forms style)]
