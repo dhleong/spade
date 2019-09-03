@@ -199,14 +199,61 @@
        (let [~factory-name-var (factory->name ~factory-fn-name)]
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
 
-(defmacro defclass [class-name params & style]
+(defmacro defclass
+  "Define a CSS module function named `class-name` and accepting a vector
+   of parameters, `params`. For example:
+
+     (defclass ship-style [wing-color]
+       {:background \"#999\"}
+        [:.wing {:color wing-color}])
+
+   Notice how we don't have to return a single value from our defclass, but
+   can instead return multiple statements. The first map will apply to
+   whatever element gets the class, and the rest are used for the children.
+   The above would translate naturally to garden syntax as:
+
+     [:.ship-style {:background \"#999\"}
+      [:.wing {:background wing-color}]]
+
+   Calling the \"ship\" function declared here will return a string containing
+   the CSS class name that refers to the style created. In reagent, you might
+   use it like this:
+
+   (defn ship [wing-color]
+     [:div {:class (ship-style wing-color)}
+      [:div.wing]])"
+  [class-name params & style]
   (declare-style-fns :class class-name params style))
 
-(defmacro defattrs [class-name params & style]
+(defmacro defattrs
+  "Declare a CSS module function. The usage is identical to
+   `spade.core/defclass`, but instead of returning the class name directly,
+   functions declared using defattrs will return an attribute map, eg:
+
+    {:class \"the-class-name\"}"
+  [class-name params & style]
   (declare-style-fns :attrs class-name params style))
 
-(defmacro defglobal [group-name & style]
+(defmacro defglobal
+  "Declare a global style with the name `group-name`. The style declaration
+   is similar to that of `spade.core/defattrs` or `spade.core/defclass` in
+   that you can declare multiple styles at once, but since these styles apply
+   globally, and can go on elements like `<body>`, the style is injected
+   when evaluated, and so cannot accept parameters."
+  [group-name & style]
   (declare-style-fns :global group-name nil style))
 
-(defmacro defkeyframes [keyframes-name params & style]
+(defmacro defkeyframes
+  "Declare an `@keyframes` CSS module function. Like `spade.core/defclass`,
+   you can accept parameters here to be able to dynamically generate keyframes.
+   The return value of the declared function is the animation identifier, and
+   can be used like:
+
+     (defkeyframes anim-frames []
+       [\"0%\" {:opacity 0}]
+       [\"100%\" {:opacity 1}])
+
+     (defclass serenity []
+       {:animation [[(anim-frames) \"560ms\" 'ease-in-out]]})"
+  [keyframes-name params & style]
   (declare-style-fns :keyframes keyframes-name params style))
