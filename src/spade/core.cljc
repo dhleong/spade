@@ -2,7 +2,7 @@
   (:require [clojure.walk :refer [postwalk]]
             [spade.util :refer [factory->name build-style-name]]))
 
-(defn extract-key [style]
+(defn- extract-key [style]
   (:key (meta (first style))))
 
 (defn- find-key-meta [style]
