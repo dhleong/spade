@@ -1,4 +1,4 @@
-(ns spade.util
+(ns ^:no-doc spade.util
   (:require [clojure.string :as str]))
 
 (defn factory->name [factory]
