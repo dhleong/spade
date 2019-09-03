@@ -203,57 +203,62 @@
   "Define a CSS module function named `class-name` and accepting a vector
    of parameters, `params`. For example:
 
-     (defclass ship-style [wing-color]
-       {:background \"#999\"}
-        [:.wing {:color wing-color}])
+       (defclass ship-style [wing-color]
+         {:background \"#999\"}
+         [:.wing {:color wing-color}])
 
-   Notice how we don't have to return a single value from our defclass, but
-   can instead return multiple statements. The first map will apply to
-   whatever element gets the class, and the rest are used for the children.
-   The above would translate naturally to garden syntax as:
+   Notice how we can return multiple statements from `defclass`. The first map
+   applies to whatever element gets the class, and the rest are used for its
+   descendents. The above translates directly to garden syntax as:
 
-     [:.ship-style {:background \"#999\"}
-      [:.wing {:background wing-color}]]
+       [:.ship-style {:background \"#999\"}
+        [:.wing {:background wing-color}]]
 
-   Calling the \"ship\" function declared here will return a string containing
+   Calling the `ship-style` function declared here returns a string containing
    the CSS class name that refers to the style created. In reagent, you might
    use it like this:
 
-   (defn ship [wing-color]
-     [:div {:class (ship-style wing-color)}
-      [:div.wing]])"
+       (defn ship [wing-color]
+         [:div {:class (ship-style wing-color)}
+          [:div.wing]])"
   [class-name params & style]
   (declare-style-fns :class class-name params style))
 
 (defmacro defattrs
-  "Declare a CSS module function. The usage is identical to
-   `spade.core/defclass`, but instead of returning the class name directly,
-   functions declared using defattrs will return an attribute map, eg:
+  "Declare a CSS module function. The usage is identical to [[defclass]], but
+   instead of returning the class name directly, functions declared using
+   defattrs will return an attribute map, eg:
 
-    {:class \"the-class-name\"}"
+       {:class \"the-class-name\"}
+
+   A `defattrs` function can then be used simply in a reagent component as:
+
+       (defn ship [wing-color]
+         [:div (ship-attrs wing-color)
+          [:div.wing]])"
   [class-name params & style]
   (declare-style-fns :attrs class-name params style))
 
 (defmacro defglobal
-  "Declare a global style with the name `group-name`. The style declaration
-   is similar to that of `spade.core/defattrs` or `spade.core/defclass` in
-   that you can declare multiple styles at once, but since these styles apply
-   globally, and can go on elements like `<body>`, the style is injected
-   when evaluated, and so cannot accept parameters."
+  "Declare a global style with the name `group-name`. The style declaration is
+   similar to that of [[defattrs]] or [[defclass]] in that you can declare
+   multiple styles at once, but since these styles apply globally, and can go
+   on elements like `<body>`, the style is injected when evaluated, and so
+   cannot accept parameters."
   [group-name & style]
   (declare-style-fns :global group-name nil style))
 
 (defmacro defkeyframes
-  "Declare an `@keyframes` CSS module function. Like `spade.core/defclass`,
-   you can accept parameters here to be able to dynamically generate keyframes.
-   The return value of the declared function is the animation identifier, and
-   can be used like:
+  "Declare an `@keyframes` CSS module function. Like [[defclass]], you can
+   accept parameters here to be able to dynamically generate keyframes.  The
+   return value of the declared function is the animation identifier, and can
+   be used like:
 
-     (defkeyframes anim-frames []
-       [\"0%\" {:opacity 0}]
-       [\"100%\" {:opacity 1}])
+       (defkeyframes anim-frames []
+         [\"0%\" {:opacity 0}]
+         [\"100%\" {:opacity 1}])
 
-     (defclass serenity []
-       {:animation [[(anim-frames) \"560ms\" 'ease-in-out]]})"
+       (defclass serenity []
+         {:animation [[(anim-frames) \"560ms\" 'ease-in-out]]})"
   [keyframes-name params & style]
   (declare-style-fns :keyframes keyframes-name params style))
