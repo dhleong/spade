@@ -10,8 +10,11 @@ generation.
 
 ## How?
 
+Add to whichever dependency manager you prefer, substituting `LATEST-VERSION`
+for the one indicated at the top of this file:
+
 ```clojure
-; leiningen, shadow-cljs, etc:
+; leiningen, shadow-cljs.edn, etc:
 [net.dhleong/spade "LATEST-VERSION"]
 
 ; deps.edn:
@@ -26,6 +29,9 @@ Spade uses them at the declaration site to enable a much richer, more intuitive
 syntax:
 
 ```clojure
+(ns co.serenity
+  (:require [spade.core :refer [defclass]]))
+
 (defclass ship-style []
   {:background "#999"}
   [:.wing {:background "#777"}])
@@ -67,6 +73,9 @@ To use this in reagent, you might do:
 Since this pattern is quite common, Spade comes with a convenience:
 
 ```clojure
+(ns co.serenity
+  (:require [spade.core :refer [defattrs]]))
+
 ; defattrs is identical in syntax to defclass, but returns an attributes
 ; map for use in hiccup-based frameworks like reagent
 (defattrs ship-attrs [wing-color]
@@ -83,6 +92,9 @@ Since this pattern is quite common, Spade comes with a convenience:
 Sometimes you need to create global styles. No problem!
 
 ```clojure
+(ns co.serenity
+  (:require [spade.core :refer [defglobal]]))
+
 (defglobal window-styles
  [:body {:background "#333"}])
 ```
@@ -119,6 +131,9 @@ Spade supports `@media` queries in the exact same way you see them in the [garde
 Spade even supports generating `@keyframes` just like you'd expect:
 
 ```clojure
+(ns co.serenity
+  (:require [spade.core :refer [defkeyframes]]))
+
 (defkeyframes anim-frames []
   ["0%" {:opacity 0}]
   ["100%" {:opacity 1}])
