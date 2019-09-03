@@ -1,6 +1,4 @@
-(ns ^{:author "Daniel Leong"
-      :doc "spade.util"}
-  spade.util
+(ns spade.util
   (:require [clojure.string :as str]))
 
 (defn factory->name [factory]

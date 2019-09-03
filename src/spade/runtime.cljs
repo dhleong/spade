@@ -1,6 +1,4 @@
-(ns ^{:author "Daniel Leong"
-      :doc "spade.runtime"}
-  spade.runtime
+(ns spade.runtime
   (:require [clojure.string :as str]
             [garden.core :as garden]))
 
