@@ -28,8 +28,9 @@
   (postwalk
     (fn [element]
       (if (and (symbol? element)
-               (auto-imported-at-form? element))
+             (auto-imported-at-form? element))
         (symbol "garden.stylesheet" (name element))
+
         element))
     style))
 
@@ -78,9 +79,22 @@
                                                key#
                                                ~params-var)]]))))
 
+(defn- prefix-at-media [style]
+  (postwalk
+    (fn [form]
+      (if (and (list? form)
+               (= 'garden.stylesheet/at-media (first form)))
+        (let [[sym media-map & body] form]
+          `(~sym ~media-map
+                [:& ~@body]))
+
+        form))
+    style))
+
 (defn- transform-named-style [style params style-name-var params-var]
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
+        style (prefix-at-media style)
         [base-style-var name-var name-let] (build-style-naming-let
                                              style params style-name-var
                                              params-var)

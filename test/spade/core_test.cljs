@@ -15,6 +15,11 @@
 (defclass params [color]
   {:color color})
 
+(defclass with-media []
+  (at-media {:max-width "50px"}
+    {:background "blue"}
+    [:.nested {:background "red"}]))
+
 (deftest defclass-test
   (testing "computed-key test"
     (is (= "spade-core-test-computed-key_BLUE"
@@ -26,7 +31,17 @@
 
   (testing "Fancy :key test"
     (is (= "spade-core-test-key-in-block_BLUE"
-           (key-in-block "blue")))))
+           (key-in-block "blue"))))
+
+  (testing "@media generation"
+    (let [generated (-> (with-media-factory$ "with-media" [])
+                        :css
+                        (str/replace #"\s+" " "))]
+      (is (str/includes?
+            generated
+            (str "@media (max-width: 50px) { "
+                 ".with-media { background: blue; } "
+                 ".with-media .nested { background: red; }"))))))
 
 
 (defattrs fixed-style-attrs []
