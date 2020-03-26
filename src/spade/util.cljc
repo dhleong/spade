@@ -1,11 +1,25 @@
 (ns ^:no-doc spade.util
   (:require [clojure.string :as str]))
 
-(defn factory->name [factory]
-  (-> (.-name factory)
-      (str/replace "_factory$" "")
-      (str/replace #"[_$]" "-")
-      (str/replace #"^-" "_")))
+(defn factory->name
+  "Given a style factory function, return an appropriate name for its
+   style. This function assumes it will be called *once* for any given
+   factory; subsequent calls for the same factory *may not* return the
+   same value (especially under :simple optimizations)."
+  [factory]
+  (let [given-name (.-name factory)]
+    (if (empty? given-name)
+      ; under :simple optimizations, the way the function is declared does
+      ; not leave any value for its name. so... generate one!
+      (name (gensym "SPD"))
+
+      ; normal case: base the style name on the factory function's name.
+      ; this lets us have descriptive names in dev, and concise names in
+      ; prod, without having to embed anything extra in the file
+      (-> given-name
+          (str/replace "_factory$" "")
+          (str/replace #"[_$]" "-")
+          (str/replace #"^-" "_")))))
 
 (defn sanitize [s]
   (-> s
