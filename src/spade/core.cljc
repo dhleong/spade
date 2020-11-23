@@ -34,6 +34,32 @@
         element))
     style))
 
+(defn- css-var? [element]
+  (and (keyword? element)
+       (= "var" (namespace element))))
+
+(defn- varify-key [element]
+  (keyword (str "--" (name element))))
+
+(defn- varify-val [element]
+  (keyword (str "var(--" (name element) ")")))
+
+(defn- rename-vars [style]
+  (postwalk
+    (fn [element]
+      (if (map-entry? element)
+        (let [var-key? (css-var? (key element))
+              var-val? (css-var? (val element))]
+          (if (or var-key? var-val?)
+            (-> element
+                (update 0 (if var-key? varify-key identity))
+                (update 1 (if var-val? varify-val identity)))
+
+            element))
+
+        element))
+    style))
+
 (defn- extract-composes [style]
   (if-let [composes (when (map? (first style))
                       (:composes (first style)))]
@@ -94,7 +120,7 @@
 (defn- transform-named-style [style params style-name-var params-var]
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
-        style (prefix-at-media style)
+        style (->> style prefix-at-media rename-vars)
         [base-style-var name-var name-let] (build-style-naming-let
                                              style params style-name-var
                                              params-var)
@@ -106,7 +132,8 @@
        ~(with-composition composition name-var style-var))))
 
 (defn- transform-keyframes-style [style params style-name-var params-var]
-  (let [[style-var name-var style-naming-let] (build-style-naming-let
+  (let [style (->> style prefix-at-media rename-vars)
+        [style-var name-var style-naming-let] (build-style-naming-let
                                                 style params style-name-var
                                                 params-var)
         info-map `{:css (spade.runtime/compile-css
@@ -127,7 +154,7 @@
   (let [style (replace-at-forms style)]
     (cond
       (#{:global} mode)
-      `{:css (spade.runtime/compile-css ~(vec style))
+      `{:css (spade.runtime/compile-css ~(vec (rename-vars style)))
         :name ~style-name-var}
 
       ; keyframes are a bit of a special case
