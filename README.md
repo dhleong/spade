@@ -156,8 +156,8 @@ for "zero-cost" abstractions.
 
 CSS custom properties (AKA variables) can be a convenient way to, for
 example, define dynamic theme colors once and reuse them throughout the
-codebase. Spade provides some extra sugar to make using them feel more
-idiomatic:
+codebase. Spade provides some extra sugar to make using them easier and
+more idiomatic:
 
 ```clojure
 (defglobal light-dark
@@ -176,9 +176,15 @@ Notice how our declaration and usage sites are identical, and that
 they're "just" normal keywords. However, by using `*earmuffs*` around
 the name of the keyword, Spade knows that it is meant to be a variable,
 and applies the correct CSS styling based on the position within the
-style. Normal keyword namespace semantics apply, so you can expect that
+style. This naming was chosen because it is reminiscent of the naming
+of dynamic Clojure vars, and because `*` is not valid in a CSS property
+name, so the meaning is unambiguous.
+
+Normal keyword namespace semantics apply, so you can expect that
 `:theme/*text*` and `:crew.quarters/*text*` will result in distinct
-variables.
+variables. In fact, you don't need any namespace at all; `:*text*` will
+also result in a perfectly valid CSS variable, disinct from any of the
+other two mentioned above.
 
 The above example will generate the following CSS:
 
