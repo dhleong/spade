@@ -1,6 +1,7 @@
 (ns spade.runtime
   (:require [clojure.string :as str]
-            [garden.core :as garden]))
+            [garden.core :as garden]
+            [garden.types :refer [->CSSFunction]]))
 
 (defonce
   ^{:private true
@@ -9,6 +10,9 @@
 
 (defonce ^:dynamic *css-compile-flags*
   {:pretty-print? goog.DEBUG})
+
+(defn ->css-var [n]
+  (->CSSFunction "var" n))
 
 (defn compile-css [elements]
   (garden/css *css-compile-flags* elements))

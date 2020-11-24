@@ -3,6 +3,12 @@
             [clojure.string :as str]
             [spade.core :refer [defattrs defclass defglobal defkeyframes]]))
 
+; for the linter's sake:
+(declare with-media-factory$
+         class-with-vars-factory$
+         composed-factory$
+         composed-attrs-factory$)
+
 (defclass computed-key [color]
   ^{:key (str/upper-case color)}
   {:color color})
@@ -19,6 +25,12 @@
   (at-media {:max-width "50px"}
     {:background "blue"}
     [:.nested {:background "red"}]))
+
+(defclass class-with-vars []
+  {:*my-var* "42pt"
+   ::*namespaced* "blue"
+   :font-size :*my-var*
+   :background ::*namespaced*})
 
 (deftest defclass-test
   (testing "computed-key test"
@@ -41,7 +53,20 @@
             generated
             (str "@media (max-width: 50px) { "
                  ".with-media { background: blue; } "
-                 ".with-media .nested { background: red; }"))))))
+                 ".with-media .nested { background: red; }")))))
+
+  (testing "CSS var declaration and  usage"
+    (let [generated (-> (class-with-vars-factory$ "class-with-vars" [])
+                        :css
+                        (str/replace #"\s+" " "))]
+      (is (str/includes?
+            generated
+            (str ".class-with-vars {"
+                 " --my-var: 42pt;"
+                 " --spade-core-test--namespaced: blue;"
+                 " font-size: var(--my-var);"
+                 " background: var(--spade-core-test--namespaced);"
+                 " }"))))))
 
 
 (defattrs fixed-style-attrs []

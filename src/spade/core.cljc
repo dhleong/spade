@@ -1,5 +1,6 @@
 (ns spade.core
-  (:require [clojure.walk :refer [postwalk]]
+  (:require [clojure.string :as str]
+            [clojure.walk :refer [postwalk]]
             [spade.util :refer [factory->name build-style-name]]))
 
 (defn- extract-key [style]
@@ -34,15 +35,27 @@
         element))
     style))
 
+(defn- clean-property-name [n]
+  (when n
+    (str/replace n #"[^a-zA-Z0-9_-]" "-")))
+
 (defn- css-var? [element]
   (and (keyword? element)
-       (= "var" (namespace element))))
+       (let [n (name element)]
+         (and (str/starts-with? n "*")
+              (str/ends-with? n "*")))))
 
 (defn- varify-key [element]
-  (keyword (str "--" (name element))))
+  (let [space (namespace element)
+        n (name element)]
+    (keyword (str (when space "--")
+                  (clean-property-name (namespace element))
+                  "--"
+                  (clean-property-name
+                    (subs n 1 (dec (count n))))))))
 
 (defn- varify-val [element]
-  (keyword (str "var(--" (name element) ")")))
+  `(spade.runtime/->css-var ~(varify-key element)))
 
 (defn- rename-vars [style]
   (postwalk

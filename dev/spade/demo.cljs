@@ -12,7 +12,7 @@
   ["100%" {:opacity end}])
 
 (defglobal background
-  [:body {:var/my-var "22pt"
+  [:body {:*my-var* "22pt"
           :background "#333"}])
 
 (defglobal text
@@ -23,7 +23,7 @@
     {:padding "80px"})
   {:padding "8px"}
 
-  [:.title {:font-size :var/my-var
+  [:.title {:font-size :*my-var*
             :animation [[(parameterized-anim-frames 0 0.5) "560ms" 'ease-in-out]]}])
 
 (defclass colorized-with-key [color]
