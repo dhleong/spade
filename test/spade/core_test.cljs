@@ -30,7 +30,8 @@
   {:*my-var* "42pt"
    ::*namespaced* "blue"
    :font-size :*my-var*
-   :background ::*namespaced*})
+   :background ::*namespaced*
+   :color [[:*my-var* :!important]]})
 
 (deftest defclass-test
   (testing "computed-key test"
@@ -55,7 +56,7 @@
                  ".with-media { background: blue; } "
                  ".with-media .nested { background: red; }")))))
 
-  (testing "CSS var declaration and  usage"
+  (testing "CSS var declaration and usage"
     (let [generated (-> (class-with-vars-factory$ "class-with-vars" [])
                         :css
                         (str/replace #"\s+" " "))]
@@ -66,6 +67,7 @@
                  " --spade-core-test--namespaced: blue;"
                  " font-size: var(--my-var);"
                  " background: var(--spade-core-test--namespaced);"
+                 " color: var(--my-var) !important;"
                  " }"))))))
 
 
@@ -159,15 +161,7 @@
     (is (= ["spade-core-test-computed-key_BLUE"
             "spade-core-test-composed-attrs_blue"
             "spade-core-test-compose-ception"]
-           (str/split (compose-ception) #" ")))
-
-    (let [generated (:css (composed-attrs-factory$ "" ["blue"] "blue"))]
-      (is (false? (str/includes? generated
-                                 "color:")))
-      (is (false? (str/includes? generated
-                                 "composes:")))
-      (is (true? (str/includes? generated
-                                "background:"))))))
+           (str/split (compose-ception) #" ")))))
 
 (defclass destructured [{:keys [c b]}]
   ^{:key (str c "_" b)}

@@ -1,6 +1,6 @@
 (ns spade.core
   (:require [clojure.string :as str]
-            [clojure.walk :refer [postwalk]]
+            [clojure.walk :refer [postwalk prewalk]]
             [spade.util :refer [factory->name build-style-name]]))
 
 (defn- extract-key [style]
@@ -58,9 +58,10 @@
   `(spade.runtime/->css-var ~(varify-key element)))
 
 (defn- rename-vars [style]
-  (postwalk
+  (prewalk
     (fn [element]
-      (if (map-entry? element)
+      (cond
+        (map-entry? element)
         (let [var-key? (css-var? (key element))
               var-val? (css-var? (val element))]
           (if (or var-key? var-val?)
@@ -70,6 +71,10 @@
 
             element))
 
+        (css-var? element)
+        (varify-val element)
+
+        :else
         element))
     style))
 
