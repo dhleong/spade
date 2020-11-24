@@ -147,6 +147,59 @@ appropriate CSS into the DOM on-demand, and returns the animation identifier:
   {:animation [[(anim-frames) "560ms" 'ease-in-out]]})
 ```
 
+### Syntactic Sugar
+
+Spade also provides some extra syntactic sugar, performed at compile time
+for "zero-cost" abstractions.
+
+#### CSS Custom Properties
+
+CSS custom properties (AKA variables) can be a convenient way to, for
+example, define dynamic theme colors once and reuse them throughout the
+codebase. Spade provides some extra sugar to make using them feel more
+idiomatic:
+
+```clojure
+(defglobal light-dark
+  (at-media {:prefers-color-scheme 'dark}
+    [":root" {:theme/*background* "#000"
+              :theme/*text* "#E0EBFF"}])
+  [":root" {:theme/*background* "#fff"
+            :theme/*text* "#000"}])
+
+(defclass page []
+  {:background :theme/*background*
+   :color :theme/*text*})
+```
+
+Notice how our declaration and usage sites are identical, and that
+they're "just" normal keywords. However, by using `*earmuffs*` around
+the name of the keyword, Spade knows that it is meant to be a variable,
+and applies the correct CSS styling based on the position within the
+style. Normal keyword namespace semantics apply, so you can expect that
+`:theme/*text*` and `:crew.quarters/*text*` will result in distinct
+variables.
+
+The above example will generate the following CSS:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme--background: #000;
+    --theme--text: #E0EBFF;
+  }
+}
+
+:root {
+  --theme--background: #fff;
+  --theme--text: #000;
+}
+
+.page {
+  background: var(--theme--background);
+  color: var(--theme--text);
+}
+```
 
 ## Development
 
