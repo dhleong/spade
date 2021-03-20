@@ -1,4 +1,4 @@
-(defproject net.dhleong/spade "1.1.0-SNAPSHOT"
+(defproject net.dhleong/spade "1.2.0-SNAPSHOT"
   :description "A nice tool to use in the Garden"
   :url "https://github.com/dhleong/spade"
   :license {:name "Eclipse Public License"
