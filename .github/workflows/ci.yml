@@ -30,29 +30,10 @@ jobs:
     - name: Verify Lint
       run: clojure -Sdeps '{:deps {clj-kondo {:mvn/version "RELEASE"}}}' -m clj-kondo.main --lint src --config .clj-kondo/config.edn
 
-  deploy-snapshot:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Extract snapshot version
-        run: |
-          echo "VERSION="$(head -n 1 project.clj | cut -d' ' -f 3 | sed 's/"//g') >> $GITHUB_ENV
-
-      - name: Setup clj tools
-        uses: DeLaGuardo/setup-clojure@master
-        with:
-          lein: 2.9.4
-
-      - name: Release snapshot to Clojars
-        env:
-          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
-          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
-        run: |
-          echo $VERSION
-          lein deploy clojars
-
-
+    - name: Release snapshot to Clojars
+      if: github.ref == 'refs/heads/main'
+      env:
+        CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+        CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+      run: |
+        lein deploy clojars
