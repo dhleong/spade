@@ -1,0 +1,17 @@
+{:linters {:unresolved-symbol {:exclude [goog.DEBUG
+                                         (spade.core/defattrs [at-media])
+                                         (spade.core/defclass [at-media])
+                                         (spade.core/defglobal [at-media])
+                                         (spade.core/defkeyframes [at-media])
+
+                                         (com.rpl.specter/recursive-path)
+                                         ]}}
+ :lint-as {applied-science.js-interop/defn clojure.core/defn
+           applied-science.js-interop/let clojure.core/let
+           applied-science.js-interop/fn clojure.core/fn
+           reagent.core/with-let clojure.core/let
+           spade.core/defattrs clojure.core/defn
+           spade.core/defclass clojure.core/defn
+           spade.core/defglobal clojure.core/def
+           spade.core/defkeyframes clojure.core/defn}}
+
