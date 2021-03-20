@@ -207,6 +207,8 @@ The above example will generate the following CSS:
 }
 ```
 
+Note that [CSS Custom Properties are not supported on all browsers][4], and this syntax compiles to that feature directly without any attempt at backwards compatibility—if CSS Custom Properties are not supported on a browser you are targetting, this syntax will also not be supported.
+
 ## Development
 
 To get an interactive development environment run:
@@ -231,3 +233,4 @@ Distributed under the Eclipse Public License either version 1.0
 [1]: https://github.com/css-modules/css-modules
 [2]: https://github.com/noprompt/garden/
 [3]: https://github.com/roosta/herb
+[4]: https://caniuse.com/css-variables
