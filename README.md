@@ -147,6 +147,67 @@ appropriate CSS into the DOM on-demand, and returns the animation identifier:
   {:animation [[(anim-frames) "560ms" 'ease-in-out]]})
 ```
 
+### Syntactic Sugar
+
+Spade also provides some extra syntactic sugar, performed at compile time
+for "zero-cost" abstractions.
+
+#### CSS Custom Properties
+
+CSS custom properties (AKA variables) can be a convenient way to, for
+example, define dynamic theme colors once and reuse them throughout the
+codebase. Spade provides some extra sugar to make using them easier and
+more idiomatic:
+
+```clojure
+(defglobal light-dark
+  (at-media {:prefers-color-scheme 'dark}
+    [":root" {:theme/*background* "#000"
+              :theme/*text* "#E0EBFF"}])
+  [":root" {:theme/*background* "#fff"
+            :theme/*text* "#000"}])
+
+(defclass page []
+  {:background :theme/*background*
+   :color :theme/*text*})
+```
+
+Notice how our declaration and usage sites are identical, and that
+they're "just" normal keywords. However, by using `*earmuffs*` around
+the name of the keyword, Spade knows that it is meant to be a variable,
+and applies the correct CSS styling based on the position within the
+style. This naming was chosen because it is reminiscent of the naming
+of dynamic Clojure vars, and because `*` is not valid in a CSS property
+name, so the meaning is unambiguous.
+
+Normal keyword namespace semantics apply, so you can expect that
+`:theme/*text*` and `:crew.quarters/*text*` will result in distinct
+variables. In fact, you don't need any namespace at all; `:*text*` will
+also result in a perfectly valid CSS variable, disinct from any of the
+other two mentioned above.
+
+The above example will generate the following CSS:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme--background: #000;
+    --theme--text: #E0EBFF;
+  }
+}
+
+:root {
+  --theme--background: #fff;
+  --theme--text: #000;
+}
+
+.page {
+  background: var(--theme--background);
+  color: var(--theme--text);
+}
+```
+
+Note that [CSS Custom Properties are not supported on all browsers][4], and this syntax compiles to that feature directly without any attempt at backwards compatibility—if CSS Custom Properties are not supported on a browser you are targetting, this syntax will also not be supported.
 
 ## Development
 
@@ -172,3 +233,4 @@ Distributed under the Eclipse Public License either version 1.0
 [1]: https://github.com/css-modules/css-modules
 [2]: https://github.com/noprompt/garden/
 [3]: https://github.com/roosta/herb
+[4]: https://caniuse.com/css-variables

@@ -1,5 +1,6 @@
 (ns spade.core
-  (:require [clojure.walk :refer [postwalk]]
+  (:require [clojure.string :as str]
+            [clojure.walk :refer [postwalk prewalk]]
             [spade.util :refer [factory->name build-style-name]]))
 
 (defn- extract-key [style]
@@ -31,6 +32,49 @@
              (auto-imported-at-form? element))
         (symbol "garden.stylesheet" (name element))
 
+        element))
+    style))
+
+(defn- clean-property-name [n]
+  (when n
+    (str/replace n #"[^a-zA-Z0-9_-]" "-")))
+
+(defn- css-var? [element]
+  (and (keyword? element)
+       (let [n (name element)]
+         (and (str/starts-with? n "*")
+              (str/ends-with? n "*")))))
+
+(defn- varify-key [element]
+  (let [space (namespace element)
+        n (name element)]
+    (keyword (str (when space "--")
+                  (clean-property-name (namespace element))
+                  "--"
+                  (clean-property-name
+                    (subs n 1 (dec (count n))))))))
+
+(defn- varify-val [element]
+  `(spade.runtime/->css-var ~(varify-key element)))
+
+(defn- rename-vars [style]
+  (prewalk
+    (fn [element]
+      (cond
+        (map-entry? element)
+        (let [var-key? (css-var? (key element))
+              var-val? (css-var? (val element))]
+          (if (or var-key? var-val?)
+            (-> element
+                (update 0 (if var-key? varify-key identity))
+                (update 1 (if var-val? varify-val identity)))
+
+            element))
+
+        (css-var? element)
+        (varify-val element)
+
+        :else
         element))
     style))
 
@@ -94,7 +138,7 @@
 (defn- transform-named-style [style params style-name-var params-var]
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
-        style (prefix-at-media style)
+        style (->> style prefix-at-media rename-vars)
         [base-style-var name-var name-let] (build-style-naming-let
                                              style params style-name-var
                                              params-var)
@@ -106,7 +150,8 @@
        ~(with-composition composition name-var style-var))))
 
 (defn- transform-keyframes-style [style params style-name-var params-var]
-  (let [[style-var name-var style-naming-let] (build-style-naming-let
+  (let [style (->> style prefix-at-media rename-vars)
+        [style-var name-var style-naming-let] (build-style-naming-let
                                                 style params style-name-var
                                                 params-var)
         info-map `{:css (spade.runtime/compile-css
@@ -127,7 +172,7 @@
   (let [style (replace-at-forms style)]
     (cond
       (#{:global} mode)
-      `{:css (spade.runtime/compile-css ~(vec style))
+      `{:css (spade.runtime/compile-css ~(vec (rename-vars style)))
         :name ~style-name-var}
 
       ; keyframes are a bit of a special case

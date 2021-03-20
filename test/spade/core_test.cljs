@@ -3,6 +3,14 @@
             [clojure.string :as str]
             [spade.core :refer [defattrs defclass defglobal defkeyframes]]))
 
+; for the linter's sake:
+(declare with-media-factory$
+         class-with-vars-factory$
+         fixed-style-attrs-factory$
+         composed-factory$
+         composed-attrs-factory$
+         parameterized-key-frames-factory$)
+
 (defclass computed-key [color]
   ^{:key (str/upper-case color)}
   {:color color})
@@ -19,6 +27,13 @@
   (at-media {:max-width "50px"}
     {:background "blue"}
     [:.nested {:background "red"}]))
+
+(defclass class-with-vars []
+  {:*my-var* "42pt"
+   ::*namespaced* "blue"
+   :font-size :*my-var*
+   :background ::*namespaced*
+   :color [[:*my-var* :!important]]})
 
 (deftest defclass-test
   (testing "computed-key test"
@@ -41,20 +56,47 @@
             generated
             (str "@media (max-width: 50px) { "
                  ".with-media { background: blue; } "
-                 ".with-media .nested { background: red; }"))))))
+                 ".with-media .nested { background: red; }")))))
+
+  (testing "CSS var declaration and usage"
+    (let [generated (-> (class-with-vars-factory$ "class-with-vars" [])
+                        :css
+                        (str/replace #"\s+" " "))]
+      (is (str/includes?
+            generated
+            (str ".class-with-vars {"
+                 " --my-var: 42pt;"
+                 " --spade-core-test--namespaced: blue;"
+                 " font-size: var(--my-var);"
+                 " background: var(--spade-core-test--namespaced);"
+                 " color: var(--my-var) !important;"
+                 " }"))))))
 
 
 (defattrs fixed-style-attrs []
-  {:color "blue"})
+  {:*my-var* "blue"
+   :color :*my-var*})
 
 (deftest defattrs-test
   (testing "Return map from defattrs"
     (is (= {:class "spade-core-test-fixed-style-attrs"}
-           (fixed-style-attrs)))))
+           (fixed-style-attrs))))
+
+  (testing "CSS var declaration and usage"
+    (let [generated (-> (fixed-style-attrs-factory$ "with-vars" [])
+                        :css
+                        (str/replace #"\s+" " "))]
+      (is (str/includes?
+            generated
+            (str ".with-vars {"
+                 " --my-var: blue;"
+                 " color: var(--my-var);"
+                 " }"))))))
 
 
 (defglobal global-1
-  [:body {:background "blue"}])
+  [":root" {:*background* "blue"}]
+  [:body {:background :*background*}])
 
 (defglobal global-2
   (at-media {:min-width "42px"}
@@ -63,7 +105,8 @@
 (deftest defglobal-test
   (testing "Declare const var with style from global"
     (is (string? global-1))
-    (is (= "body {\n  background: blue;\n}"
+    (is (= (str ":root {\n  --background: blue;\n}\n\n"
+                "body {\n  background: var(--background);\n}")
            global-1)))
 
   (testing "Support at-media automatically"
@@ -76,7 +119,8 @@
   [:from {:opacity 0}])
 
 (defkeyframes parameterized-key-frames [from]
-  [:from {:opacity from}])
+  [:from {::*from* from
+          :opacity ::*from*}])
 
 (deftest defkeyframes-test
   (testing "Return keyframes name from defkeyframes"
@@ -87,7 +131,19 @@
   (testing "Return dynamic keyframes name from parameterized defkeyframes"
     (is (fn? key-frames))
     (is (= (str "spade-core-test-parameterized-key-frames_" (hash [0]))
-           (parameterized-key-frames 0)))))
+           (parameterized-key-frames 0))))
+
+  (testing "CSS var declaration and usage"
+    (let [generated (-> (parameterized-key-frames-factory$
+                          "with-vars" [42] 42)
+                        :css
+                        (str/replace #"\s+" " "))]
+      (is (str/includes?
+            generated
+            (str "from {"
+                 " --spade-core-test--from: 42;"
+                 " opacity: var(--spade-core-test--from);"
+                 " }"))))))
 
 (defclass composed [color]
   ^{:key color}
