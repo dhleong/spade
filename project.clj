@@ -8,7 +8,7 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.520"]
-                 [garden "1.3.9"]]
+                 [garden "1.3.10"]]
 
   :plugins [[lein-figwheel "0.5.19"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
@@ -18,9 +18,9 @@
   :source-paths ["src"]
   :test-paths ["test"]
 
-  :repositories [["clojars" {:url "https://repo.clojars.org"
-                             :username :env/clojars_username
-                             :password :env/clojars_password}]]
+  :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
+                                    :username :env/clojars_username
+                                    :password :env/clojars_password}]]
 
   :jar-exclusions [#"(?:^|\/)public\/"]
 
