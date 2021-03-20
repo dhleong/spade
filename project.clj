@@ -18,6 +18,10 @@
   :source-paths ["src"]
   :test-paths ["test"]
 
+  :repositories [["clojars" {:url "https://repo.clojars.org"
+                             :username :env/clojars_username
+                             :password :env/clojars_password}]]
+
   :jar-exclusions [#"(?:^|\/)public\/"]
 
   :aliases {"test" ["do" ; "test"

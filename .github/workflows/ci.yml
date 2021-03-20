@@ -53,6 +53,6 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
         run: |
           echo $VERSION
-          clojure -Arelease --skip-tag --version $VERSION
+          lein deploy clojars
 
 
