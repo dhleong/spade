@@ -13,14 +13,22 @@
 (defn compile-css [elements]
   (garden/css *css-compile-flags* elements))
 
-(defn update! [obj css]
+(defn- perform-update! [obj css]
   (set! (.-innerHTML (:element obj)) css))
+
+(defn update! [id css]
+  (swap! *injected* update id
+         (fn update-injected-style [obj]
+           (when-not (= (:source obj) css)
+             (perform-update! obj css))
+           (assoc obj :source css))))
 
 (defn inject! [id css]
   (let [head (.-head js/document)
         element (doto (js/document.createElement "style")
                   (.setAttribute "spade-id" (str id)))
         obj {:element element
+             :source css
              :id id}]
     (assert (some? head)
             "An head element is required in the dom to inject the style.")
@@ -28,7 +36,7 @@
     (.appendChild head element)
 
     (swap! *injected* assoc id obj)
-    (update! obj css)))
+    (perform-update! obj css)))
 
 (defn- compose-names [{style-name :name composed :composes}]
   (if-not composed
@@ -58,7 +66,7 @@
 
     (if existing
       ; update existing style element
-      (update! existing css)
+      (update! style-name css)
 
       ; create a new element
       (inject! style-name css))
