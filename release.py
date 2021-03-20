@@ -1,18 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Release script for spade
 #
 
 from collections import OrderedDict
 
+# pylint: disable=unused-wildcard-import,wildcard-import
 try:
-    from hostage import *  #pylint: disable=unused-wildcard-import,wildcard-import
+    from hostage import *
 except ImportError:
-    print "!! Release library unavailable."
-    print "!! Use `pip install hostage` to fix."
-    print "!! You will also need an API token in .github.token,"
-    print "!!  a .hubrrc config, or `brew install hub` configured."
-    print "!! A $GITHUB_TOKEN env variable will also work."
+    print("!! Release library unavailable.")
+    print("!! Use `pip install hostage` to fix.")
+    print("!! You will also need an API token in .github.token,")
+    print("!!  a .hubrrc config, or `brew install hub` configured.")
+    print("!! A $GITHUB_TOKEN env variable will also work.")
     exit(1)
 
 #
@@ -20,7 +21,7 @@ except ImportError:
 #
 
 notes = File(".last-release-notes")
-latestTag = git.Tag.latest()
+latestTag = git.Tag.latest(branch = "main")
 
 def formatIssue(issue):
     return "- {title} (#{number})\n".format(
@@ -69,7 +70,7 @@ def buildDefaultNotes(_):
     if closedIssues:
         for issue in closedIssues:
             found = False
-            for label in labeled.iterkeys():
+            for label in labeled.keys():
                 if label in issue.labels:
                     labeled[label]['content'] += formatIssue(issue)
                     found = True
@@ -77,7 +78,7 @@ def buildDefaultNotes(_):
             if not found:
                 labeled['_default']['content'] += formatIssue(issue)
 
-    for labeledIssueInfo in labeled.itervalues():
+    for labeledIssueInfo in labeled.values():
         if labeledIssueInfo['content']:
             contents += "\n**{title}**:\n{content}".format(**labeledIssueInfo)
 
@@ -92,10 +93,10 @@ version = verify(File("project.clj")
                  .filtersTo(RegexFilter('defproject net.dhleong/spade "(.*)"'))
                 ).valueElse(echoAndDie("No version!?"))
 if version.endswith("SNAPSHOT"):
-    print "May not release SNAPSHOT versions (got %s)" % version
+    print("May not release SNAPSHOT versions (got %s)" % version)
     sys.exit(1)
 else:
-    print "Testing version", version
+    print("Testing version", version)
 
 versionTag = git.Tag(version)
 
@@ -130,7 +131,7 @@ verify(Execute('lein deploy clojars')).succeeds(silent=False)
 # Upload to github
 #
 
-print "Uploading to Github..."
+print("Uploading to Github...")
 
 verify(versionTag).create()
 verify(versionTag).push("origin")
@@ -144,6 +145,6 @@ verify(gitRelease).create(body=releaseNotes)
 
 notes.delete()
 
-print "Done! Published %s" % version
+print("Done! Published %s" % version)
 
 # flake8: noqa
