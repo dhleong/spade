@@ -8,7 +8,8 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.520"]
-                 [garden "1.3.10"]]
+                 [garden "1.3.10"]
+                 [net.cgrand/macrovich "0.2.1"]]
 
   :plugins [[lein-figwheel "0.5.19"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
@@ -24,7 +25,7 @@
 
   :jar-exclusions [#"(?:^|\/)public\/"]
 
-  :aliases {"test" ["do" ; "test"
+  :aliases {"test" ["do" "test"
                     ["doo" "chrome-headless" "test" "once"]]}
 
   :cljsbuild {:builds
