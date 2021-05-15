@@ -16,9 +16,9 @@
 
 (defn inject! [target-dom styles-container id css]
   (let [destination (or (when (ifn? target-dom)
-                   (target-dom))
-                 target-dom
-                 (.-head js/document))
+                          (target-dom))
+                        target-dom
+                        (.-head js/document))
         element (doto (js/document.createElement "style")
                   (.setAttribute "spade-id" (str id)))
         obj {:element element
