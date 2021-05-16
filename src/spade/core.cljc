@@ -258,7 +258,7 @@
          ~(transform-style mode style params style-name-var params-var))
 
        (let [~factory-name-var (factory->name
-                                 (macro/case
+                                 (macros/case
                                    :cljs ~factory-fn-name
                                    :clj (var ~factory-fn-name)))]
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
