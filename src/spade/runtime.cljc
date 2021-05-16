@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [garden.core :as garden]
             [garden.types :refer [->CSSFunction]]
-            [spade.runtime.shared :as container]
+            [spade.container :as sc]
             [spade.runtime.defaults :as defaults]))
 
 (defonce ^:dynamic *css-compile-flags*
@@ -43,7 +43,7 @@
 (defn ensure-style! [mode base-style-name factory params]
   (let [{css :css style-name :name :as info} (apply factory base-style-name params params)]
 
-    (container/mount-style! *style-container* style-name css)
+    (sc/mount-style! *style-container* style-name css)
 
     (case mode
       :attrs {:class (compose-names info)}

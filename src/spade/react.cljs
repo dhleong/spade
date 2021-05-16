@@ -1,9 +1,9 @@
 (ns spade.react
   (:require [react :as react]
+            [spade.container :refer [IStyleContainer]]
             [spade.container.alternate :refer [->AlternateStyleContainer]]
-            [spade.runtime :refer [*style-container*]]
-            [spade.runtime.dom :as dom]
-            [spade.runtime.shared :refer [IStyleContainer]]))
+            [spade.container.dom :as dom]
+            [spade.runtime :refer [*style-container*]]))
 
 (defonce context (react/createContext nil))
 (defonce Provider (.-Provider context))
