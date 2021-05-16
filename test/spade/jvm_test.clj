@@ -1,7 +1,6 @@
 (ns spade.jvm-test
   (:require [clojure.test :refer [deftest is testing]]
             [spade.runtime.atom :refer [->AtomStyleContainer]]
-            [spade.runtime]
             [spade.core :refer [defclass with-styles-container]]))
 
 (defclass blue-class []

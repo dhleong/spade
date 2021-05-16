@@ -2,7 +2,8 @@
   #?(:cljs (:require-macros [net.cgrand.macrovich :as macros]))
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk prewalk]]
-            #?(:clj [net.cgrand.macrovich :as macros])
+            #?@(:clj [[net.cgrand.macrovich :as macros]
+                      [spade.runtime]])
             [spade.util :refer [factory->name build-style-name]]))
 
 (defn- extract-key [style]
