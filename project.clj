@@ -86,7 +86,7 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.19"]
                                   [cider/piggieback "0.4.1"]
-                                  [reagent "0.8.1"]]
+                                  [reagent "1.0.0"]]
 
                    :plugins [[lein-doo "0.1.10"]]
 
