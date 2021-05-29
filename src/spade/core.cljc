@@ -1,6 +1,9 @@
 (ns spade.core
+  #?(:cljs (:require-macros [net.cgrand.macrovich :as macros]))
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk prewalk]]
+            #?@(:clj [[net.cgrand.macrovich :as macros]
+                      [spade.runtime]])
             [spade.util :refer [factory->name build-style-name]]))
 
 (defn- extract-key [style]
@@ -255,7 +258,10 @@
        (defn ~factory-fn-name ~factory-params
          ~(transform-style mode style params style-name-var params-var))
 
-       (let [~factory-name-var (factory->name ~factory-fn-name)]
+       (let [~factory-name-var (factory->name
+                                 (macros/case
+                                   :cljs ~factory-fn-name
+                                   :clj (var ~factory-fn-name)))]
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
 
 (defmacro defclass
@@ -321,3 +327,10 @@
          {:animation [[(anim-frames) \"560ms\" 'ease-in-out]]})"
   [keyframes-name params & style]
   (declare-style-fns :keyframes keyframes-name params style))
+
+(defmacro with-styles-container [container & body]
+  (macros/case
+    :cljs `(binding [spade.runtime/*style-container* ~container]
+             ~@body)
+    :clj `(with-bindings {#'spade.runtime/*style-container* ~container}
+            ~@body)))

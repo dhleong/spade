@@ -1,7 +1,8 @@
 (ns spade.demo
   (:require [clojure.string :as str]
-            [reagent.core :as r]
-            [spade.core :refer [defclass defattrs defglobal defkeyframes]]))
+            [reagent.dom :as rdom]
+            [spade.core :refer [defclass defattrs defglobal defkeyframes]]
+            [spade.react :as spade]))
 
 (defkeyframes anim-frames []
   ["0%" {:opacity 0}]
@@ -50,7 +51,7 @@
 (defattrs composed-attrs []
   {:composes (flex)})
 
-(defn view []
+(defn demo []
   [:<>
    [:div {:class (serenity)}
     [:div.title "Test"]]
@@ -77,8 +78,16 @@
 
    ])
 
+(defn view []
+  [:div
+   [:style#styles]
+   [demo]])
+
 (defn mount-root []
-  (r/render [view] (.getElementById js/document "app")))
+  (rdom/render
+    [spade/with-dom #(.getElementById js/document "styles")
+     [view]]
+    (.getElementById js/document "app")))
 
 (defn init!  []
   (mount-root))
