@@ -20,25 +20,26 @@
 (defn- compose-names [{style-name :name composed :composes}]
   (if-not composed
     style-name
-    (str/join " "
-              (->>
-                (if (seq? composed)
-                  (into composed style-name)
-                  [composed style-name])
-                (map (fn [item]
-                       (cond
-                         (string? item) item
 
-                         ; unpack a defattrs
-                         (and (map? item)
-                              (string? (:class item)))
-                         (:class item)
+    (->> (if (seq? composed)
+           (into composed style-name)
+           [composed style-name])
+         (map (fn [item]
+                (cond
+                  (string? item) item
 
-                         :else
-                         (throw (ex-info
-                                  (str "Invalid argument to :composes key:"
-                                       item)
-                                  {})))))))))
+                  ; unpack a defattrs
+                  (and (map? item)
+                       (string? (:class item)))
+                  (:class item)
+
+                  :else
+                  (throw (ex-info
+                           (str "Invalid argument to :composes key:"
+                                item)
+                           {:style-name style-name
+                            :value item})))))
+         (str/join " "))))
 
 (defn ensure-style! [mode base-style-name factory params]
   (let [{css :css style-name :name :as info} (apply factory base-style-name params params)]
