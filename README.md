@@ -109,11 +109,12 @@ Spade supports composing styles just like css-modules:
 
 ```clojure
 (defclass stealth-ship []
-  {:composes (ship-style "#111")
+  {:composes [(ship-style "#111")]
    :background "#111"})
 ```
 
-The `:composes` key is only supported on the root element of a style.
+The `:composes` key is only supported on the root element of a style. It supports
+either a single style name or a collection of style names, as shown above.
 
 ### Media queries
 
