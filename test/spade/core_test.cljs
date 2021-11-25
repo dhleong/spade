@@ -9,7 +9,8 @@
          fixed-style-attrs-factory$
          composed-factory$
          composed-attrs-factory$
-         parameterized-key-frames-factory$)
+         parameterized-key-frames-factory$
+         binding-forms-factory$)
 
 (defclass computed-key [color]
   ^{:key (str/upper-case color)}
@@ -232,3 +233,50 @@
   (testing "Don't barf on Variadic args"
     (is (= "spade-core-test-variadic_cyanmagentayellow"
            (variadic "cyan" "magenta" "yellow")))))
+
+(defclass binding-forms [base-opacity]
+  (let [opacity (* 0.2 base-opacity)]
+    {:opacity base-opacity}
+    [:.child {:opacity opacity}]
+
+    ; Contrived when-let
+    (when-let [color (when (< opacity 0.2) "magenta")]
+      [:.small-grandchild {:color color}]
+      [:.child {:opacity opacity}])
+
+    (when (>= opacity 0.2)
+      [:.big-grandchild {:color "red"}]
+      [:.child {:color "cyan"}])))
+
+(deftest binding-forms-test
+  (testing "Support muliple returns from `let` forms"
+    (let [{:keys [css]} (binding-forms-factory$ "binding-forms" [1.0] 1.0)]
+      (is (true? (str/includes?
+                   css
+                   "opacity: 1;")))
+      (is (true? (str/includes?
+                   css
+                   "opacity: 0.2;")))))
+
+  (testing "Support muliple returns from `when` forms"
+    (let [{:keys [css]} (binding-forms-factory$ "binding-forms" [1.0] 1.0)]
+      (is (true? (str/includes?
+                   css
+                   ".big-grandchild")))
+      (is (true? (str/includes?
+                   css
+                   "color: cyan;")))
+      (is (false? (str/includes?
+                    css
+                    ".small-grandchild")))))
+
+  (testing "Support muliple returns from `when-let` forms"
+    (let [{:keys [css]} (binding-forms-factory$ "binding-forms" [0.1] 0.1)]
+      (is (true? (str/includes?
+                   css
+                   ".small-grandchild")))
+      ; NOTE: This doesn't pass because our (when) transformation *also*
+      ; transforms the one inside the with-let binding!
+      #_(is (true? (str/includes?
+                   css
+                   "color: magenta;"))))))

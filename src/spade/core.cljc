@@ -6,6 +6,9 @@
                       [spade.runtime]])
             [spade.util :refer [factory->name build-style-name]]))
 
+;;
+;; :key support
+
 (defn- extract-key [style]
   (:key (meta (first style))))
 
@@ -22,21 +25,48 @@
           form)))
     style))
 
+;;
+;; Shared style form transformations
+
+; Support for using at-meda, etc. without imports:
+
 (def ^:private auto-imported-at-form?
   #{'at-font-face
     'at-import
     'at-media
     'at-supports})
 
-(defn- replace-at-forms [style]
-  (postwalk
-    (fn [element]
-      (if (and (symbol? element)
-             (auto-imported-at-form? element))
-        (symbol "garden.stylesheet" (name element))
+(defn- replace-at-forms [element]
+  (if (and (symbol? element)
+           (auto-imported-at-form? element))
+    (symbol "garden.stylesheet" (name element))
 
-        element))
-    style))
+    element))
+
+; Support intuitive multi-returns from various binding forms:
+
+(def ^:private multi-return-binding-form?
+  #{'let 'when 'when-let})
+
+(defn- reformat-binding-forms [element]
+  (if (and (seq? element)
+           (symbol? (first element))
+           (multi-return-binding-form? (first element)))
+    (let [[sym bindings & body] element]
+      `(~sym ~bindings [:& ~@body]))
+
+    element))
+
+; Composed postwalk processing
+
+(def ^:private process-style
+  (partial postwalk
+           (comp
+             replace-at-forms
+             reformat-binding-forms)))
+
+;;
+;; CSS Var support
 
 (defn- clean-property-name [n]
   (when n
@@ -81,6 +111,9 @@
         element))
     style))
 
+;;
+;; Style composition support
+
 (defn- extract-composes [style]
   (if-let [composes (when (map? (first style))
                       (:composes (first style)))]
@@ -98,6 +131,9 @@
     (if composition
       (assoc base :composes composition)
       base)))
+
+;;
+;; Style formatting, etc.
 
 (defn- build-style-naming-let
   [style params original-style-name-var params-var]
@@ -133,7 +169,7 @@
                (= 'garden.stylesheet/at-media (first form)))
         (let [[sym media-map & body] form]
           `(~sym ~media-map
-                [:& ~@body]))
+                 [:& ~@body]))
 
         form))
     style))
@@ -172,7 +208,7 @@
       info-map)))
 
 (defn- transform-style [mode style params style-name-var params-var]
-  (let [style (replace-at-forms style)]
+  (let [style (process-style style)]
     (cond
       (#{:global} mode)
       `{:css (spade.runtime/compile-css ~(vec (rename-vars style)))
@@ -184,6 +220,9 @@
 
       :else
       (transform-named-style style params style-name-var params-var))))
+
+;;
+;; Style fn declaration
 
 (defmulti ^:private declare-style
   (fn [mode _class-name params _factory-name-var _factory-fn-name]
@@ -263,6 +302,9 @@
                                    :cljs ~factory-fn-name
                                    :clj (var ~factory-fn-name)))]
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
+
+;;
+;; Public interface
 
 (defmacro defclass
   "Define a CSS module function named `class-name` and accepting a vector
