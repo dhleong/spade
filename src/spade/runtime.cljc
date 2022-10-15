@@ -21,8 +21,8 @@
   (if-not composed
     style-name
 
-    (->> (if (seq? composed)
-           (into composed style-name)
+    (->> (if (sequential? composed)
+           (conj composed style-name)
            [composed style-name])
          (map (fn [item]
                 (cond

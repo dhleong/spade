@@ -8,6 +8,7 @@
          class-with-vars-factory$
          fixed-style-attrs-factory$
          composed-factory$
+         composed-list-factory$
          composed-attrs-factory$
          parameterized-key-frames-factory$)
 
@@ -23,11 +24,13 @@
 (defclass params [color]
   {:color color})
 
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defclass with-media []
   (at-media {:max-width "50px"}
     {:background "blue"}
     [:.nested {:background "red"}]))
 
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defclass class-with-vars []
   {:*my-var* "42pt"
    ::*namespaced* "blue"
@@ -163,6 +166,27 @@
       (is (true? (str/includes? generated
                                 "background:"))))))
 
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defclass composed-list [color]
+  {:composes [(params color) (params "red")]
+   :background color})
+
+(deftest composed-list-test
+  (testing "compose multiple styles in list"
+    (is (= [(str "spade-core-test-params_" (hash ["blue"]))
+            (str "spade-core-test-params_" (hash ["red"]))
+            (str "spade-core-test-composed-list_" (hash ["blue"]))]
+           (-> (composed-list "blue")
+               (str/split #" "))))
+
+    (let [generated (:css (composed-list-factory$ "" ["blue"] "blue"))]
+      (is (false? (str/includes? generated
+                                "color:")))
+      (is (false? (str/includes? generated
+                                "composes:")))
+      (is (true? (str/includes? generated
+                                "background:"))))))
+
 
 (defattrs composed-attrs [color]
   ^{:key color}
@@ -204,10 +228,6 @@
   ^{:key (str c "_" b)}
   {:color c
    :background b})
-
-(defn foo {:arglists '([a b c])}
-  [& args]
-  (println args))
 
 (deftest function-meta-test
   (testing "Simple arglists"
