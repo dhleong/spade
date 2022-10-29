@@ -10,17 +10,22 @@
   (:key (meta (first style))))
 
 (defn- find-key-meta [style]
-  (postwalk
-    (fn [form]
-      (if (and (map? form)
-               (::key form))
-        form
+  (::key
+    (postwalk
+      (fn [form]
+        (if (and (map? form)
+                 (::key form))
+          form
 
-        (if-let [k (:key (meta form))]
-          {::key k}
+          (if-let [k (:key (meta form))]
+            {::key k}
 
-          form)))
-    style))
+            (if-let [k (when (seq? form)
+                         (some ::key form))]
+              {::key k}
+
+              form))))
+      style)))
 
 (def ^:private auto-imported-at-form?
   #{'at-font-face
@@ -94,6 +99,7 @@
 
 (defn- with-composition [composition name-var style-var]
   (let [base {:css `(spade.runtime/compile-css ~style-var)
+              ::form style-var
               :name name-var}]
     (if composition
       (assoc base :composes composition)
@@ -101,7 +107,7 @@
 
 (defn- build-style-naming-let
   [style params original-style-name-var params-var]
-  (let [has-key-meta? (find-key-meta style)
+  (let [has-key-meta? (some? (find-key-meta style))
         static-key (extract-key style)
         name-var (gensym "name")]
     (cond
@@ -162,6 +168,7 @@
                             ~name-var
                             ~(or style-var
                                  (vec style))))
+                   ::form ~style-var
                    :name ~name-var}]
 
     ; this (let) might get compiled out in advanced mode anyway, but
@@ -184,6 +191,28 @@
 
       :else
       (transform-named-style style params style-name-var params-var))))
+
+(defn- generate-style-name-fn [factory-name-var style params]
+  (cond
+    (empty? params)
+    `(clojure.core/constantly ~factory-name-var)
+
+    ; Custom :key meta; we need to generate the form to extract that.
+    ; TODO: Ideally we can invoke the factory but *skip* CSS compilation,
+    ; but since this is memoized (and :key isn't much used anyway) this is
+    ; probably not a big deal for now. Would be a nice optimization, however.
+    (some? (find-key-meta style))
+    `(clojure.core/memoize
+       (fn [params#]
+         (let [base-style# (::form (~factory-name-var params#))]
+           (:key (meta base-style#)))))
+
+    :else
+    `(clojure.core/memoize
+       (partial
+         #'build-style-name
+         ~factory-name-var
+         nil))))
 
 (defmulti ^:private declare-style
   (fn [mode _class-name params _factory-name-var _factory-fn-name]
@@ -250,6 +279,8 @@
          (or (vector? params)
              (nil? params))]}
   (let [factory-fn-name (symbol (str (name class-name) "-factory$"))
+        style-name-fn-name (symbol (str (name class-name) "-name$"))
+
         style-name-var (gensym "style-name")
         params-var (gensym "params")
         factory-params (vec (concat [style-name-var params-var] params))
@@ -262,6 +293,10 @@
                                  (macros/case
                                    :cljs ~factory-fn-name
                                    :clj (var ~factory-fn-name)))]
+
+         (def ~style-name-fn-name
+           ~(generate-style-name-fn factory-name-var style params))
+
          ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
 
 (defmacro defclass

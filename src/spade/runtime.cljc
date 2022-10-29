@@ -7,7 +7,9 @@
 
 (defonce ^:dynamic *css-compile-flags*
   {:pretty-print? #? (:cljs goog.DEBUG
-                      :clj false)})
+                      :clj false)
+   :always-compile-css? #? (:cljs goog.DEBUG
+                            :clj false)})
 
 (defonce ^:dynamic *style-container* (defaults/create-container))
 
