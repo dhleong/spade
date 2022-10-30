@@ -97,40 +97,43 @@
 
     [nil style]))
 
-(defn- with-composition [composition name-var style-var]
-  (let [base {:css `(spade.runtime/compile-css ~style-var)
-              ::form style-var
-              :name name-var}]
+(defn- with-composition [composition name-var key-var style-var]
+  (let [base (cond->
+               {:css `(when ~name-var
+                        (spade.runtime/compile-css ~style-var))
+                :name name-var}
+
+               key-var (assoc ::key key-var))]
     (if composition
       (assoc base :composes composition)
       base)))
 
 (defn- build-style-naming-let
-  [style params original-style-name-var params-var]
+  [style params name-var]
   (let [has-key-meta? (some? (find-key-meta style))
         static-key (extract-key style)
-        name-var (gensym "name")]
+
+        key-var (gensym "key")]
     (cond
       ; easiest case: no params? no need to call build-style-name
       (nil? (seq params))
-      [nil original-style-name-var nil]
+      [nil name-var nil nil]
 
-      (or static-key
-          (not has-key-meta?))
-      ; if we can extract the key statically, that's better
-      [nil name-var `[~name-var (#'build-style-name
-                                  ~original-style-name-var
-                                  ~static-key
-                                  ~params-var)]]
+      ; typical case: no custom key
+      (not has-key-meta?)
+      [nil name-var nil nil]
 
+      ; TODO can we use static-key? that might be nice
+      static-key
+      [nil name-var key-var
+       `[~key-var ~static-key]]
+
+      ; fancy case: custom :key
       :else
       (let [base-style-var (gensym "base-style")]
-        [base-style-var name-var `[~base-style-var ~(vec style)
-                                   key# (:key (meta (first ~base-style-var)))
-                                   ~name-var (#'build-style-name
-                                               ~original-style-name-var
-                                               key#
-                                               ~params-var)]]))))
+        [base-style-var name-var key-var
+         `[~base-style-var ~(vec style)
+           ~key-var (:key (meta (first ~base-style-var)))]]))))
 
 (defn- prefix-at-media [style]
   (postwalk
@@ -144,32 +147,32 @@
         form))
     style))
 
-(defn- transform-named-style [style params style-name-var params-var]
+(defn- transform-named-style [style params style-name-var]
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
         style (->> style prefix-at-media rename-vars)
-        [base-style-var name-var name-let] (build-style-naming-let
-                                             style params style-name-var
-                                             params-var)
+        [base-style-var name-var key-var name-let] (build-style-naming-let
+                                                     style params style-name-var)
         style-decl (if base-style-var
                      `(into [(str "." ~name-var)] ~base-style-var)
                      (into [`(str "." ~name-var)] style))]
     `(let ~(vec (concat name-let
                         [style-var style-decl]))
-       ~(with-composition composition name-var style-var))))
+       ~(with-composition composition name-var key-var style-var))))
 
-(defn- transform-keyframes-style [style params style-name-var params-var]
+(defn- transform-keyframes-style [style params style-name-var]
   (let [style (->> style prefix-at-media rename-vars)
-        [style-var name-var style-naming-let] (build-style-naming-let
-                                                style params style-name-var
-                                                params-var)
-        info-map `{:css (spade.runtime/compile-css
-                          (garden.stylesheet/at-keyframes
-                            ~name-var
-                            ~(or style-var
-                                 (vec style))))
-                   ::form ~style-var
-                   :name ~name-var}]
+        [style-var name-var key-var style-naming-let] (build-style-naming-let
+                                                        style params style-name-var)
+        info-map (cond->
+                   `{:css (when ~name-var
+                            (spade.runtime/compile-css
+                              (garden.stylesheet/at-keyframes
+                                ~name-var
+                                ~(or style-var (vec style)))))
+                     :name ~name-var}
+
+                   key-var (assoc ::key key-var))]
 
     ; this (let) might get compiled out in advanced mode anyway, but
     ; let's just generate simpler code instead of having a redundant
@@ -178,21 +181,20 @@
       `(let ~style-naming-let ~info-map)
       info-map)))
 
-(defn- transform-style [mode style params style-name-var params-var]
+(defn- transform-style [mode style params style-name-var]
   (let [style (replace-at-forms style)]
     (cond
       (#{:global} mode)
-      `{:css (spade.runtime/compile-css ~(vec (rename-vars style)))
-        :name ~style-name-var}
+      `{:css (spade.runtime/compile-css ~(vec (rename-vars style)))}
 
       ; keyframes are a bit of a special case
       (#{:keyframes} mode)
-      (transform-keyframes-style style params style-name-var params-var)
+      (transform-keyframes-style style params style-name-var)
 
       :else
-      (transform-named-style style params style-name-var params-var))))
+      (transform-named-style style params style-name-var))))
 
-(defn- generate-style-name-fn [factory-name-var style params]
+(defn- generate-style-name-fn [factory-fn-name factory-name-var style params]
   (cond
     (empty? params)
     `(clojure.core/constantly ~factory-name-var)
@@ -202,10 +204,14 @@
     ; but since this is memoized (and :key isn't much used anyway) this is
     ; probably not a big deal for now. Would be a nice optimization, however.
     (some? (find-key-meta style))
-    `(clojure.core/memoize
+    `(;clojure.core/memoize
+       do
        (fn [params#]
-         (let [base-style# (::form (~factory-name-var params#))]
-           (:key (meta base-style#)))))
+         (let [key# (::key (apply ~factory-fn-name nil params# params#))]
+           (println key#)
+           (#'build-style-name
+             ~factory-name-var
+             key#))))
 
     :else
     `(clojure.core/memoize
@@ -215,7 +221,7 @@
          nil))))
 
 (defmulti ^:private declare-style
-  (fn [mode _class-name params _factory-name-var _factory-fn-name]
+  (fn [mode _class-name params _name-fn-name _factory-fn-name]
     (case mode
       :global :static
       (cond
@@ -223,22 +229,22 @@
         (every? symbol? params) :default
         :else :destructured))))
 (defmethod declare-style :static
-  [mode class-name _ factory-name-var factory-fn-name]
+  [mode class-name _ name-fn-name factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
                       ~mode
-                      ~factory-name-var
+                      ~name-fn-name
                       ~factory-fn-name
                       nil)))
 (defmethod declare-style :no-args
-  [mode class-name _ factory-name-var factory-fn-name]
+  [mode class-name _ name-fn-name factory-fn-name]
   `(defn ~class-name []
      (spade.runtime/ensure-style!
        ~mode
-       ~factory-name-var
+       ~name-fn-name
        ~factory-fn-name
        nil)))
 (defmethod declare-style :destructured
-  [mode class-name params factory-name-var factory-fn-name]
+  [mode class-name params name-fn-name factory-fn-name]
   ; good case; since there's no variadic args, we can generate an :arglists
   ; meta and a simplified params list that we can forward simply
   (let [raw-params (->> (range (count params))
@@ -250,27 +256,27 @@
        ~raw-params
        (spade.runtime/ensure-style!
          ~mode
-         ~factory-name-var
+         ~name-fn-name
          ~factory-fn-name
          ~raw-params))))
 (defmethod declare-style :variadic
-  [mode class-name _params factory-name-var factory-fn-name]
+  [mode class-name _params name-fn-name factory-fn-name]
   ; dumb case; with a variadic params vector, any :arglists we
   ; provide gets ignored, so we just simply collect them all
   ; and pass the list as-is
   `(defn ~class-name [& params#]
      (spade.runtime/ensure-style!
        ~mode
-       ~factory-name-var
+       ~name-fn-name
        ~factory-fn-name
        params#)))
 (defmethod declare-style :default
-  [mode class-name params factory-name-var factory-fn-name]
+  [mode class-name params name-fn-name factory-fn-name]
   ; best case; simple params means we can use them directly
   `(defn ~class-name ~params
      (spade.runtime/ensure-style!
        ~mode
-       ~factory-name-var
+       ~name-fn-name
        ~factory-fn-name
        ~params)))
 
@@ -287,17 +293,17 @@
         factory-name-var (gensym "factory-name")]
     `(do
        (defn ~factory-fn-name ~factory-params
-         ~(transform-style mode style params style-name-var params-var))
+         ~(transform-style mode style params style-name-var))
 
        (let [~factory-name-var (factory->name
                                  (macros/case
                                    :cljs ~factory-fn-name
-                                   :clj (var ~factory-fn-name)))]
+                                   :clj (var ~factory-fn-name)))
 
-         (def ~style-name-fn-name
-           ~(generate-style-name-fn factory-name-var style params))
+             ~style-name-fn-name ~(generate-style-name-fn
+                                    factory-fn-name factory-name-var style params)]
 
-         ~(declare-style mode class-name params factory-name-var factory-fn-name)))))
+         ~(declare-style mode class-name params style-name-fn-name factory-fn-name)))))
 
 (defmacro defclass
   "Define a CSS module function named `class-name` and accepting a vector

@@ -43,8 +43,9 @@
                             :value item})))))
          (str/join " "))))
 
-(defn ensure-style! [mode base-style-name factory params]
-  (let [{css :css style-name :name :as info} (apply factory base-style-name params params)]
+(defn ensure-style! [mode name-factory style-factory params]
+  (let [style-name (name-factory params)
+        {css :css :as info} (apply style-factory style-name params params)]
 
     (sc/mount-style! *style-container* style-name css)
 
