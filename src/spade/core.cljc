@@ -204,14 +204,13 @@
     ; but since this is memoized (and :key isn't much used anyway) this is
     ; probably not a big deal for now. Would be a nice optimization, however.
     (some? (find-key-meta style))
-    `(;clojure.core/memoize
-       do
+    `(clojure.core/memoize
        (fn [params#]
-         (let [key# (::key (apply ~factory-fn-name nil params# params#))]
-           (println key#)
+         (let [dry-run# (apply ~factory-fn-name nil params# params#)]
            (#'build-style-name
              ~factory-name-var
-             key#))))
+             (::key dry-run#)
+             params#))))
 
     :else
     `(clojure.core/memoize
