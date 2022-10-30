@@ -45,9 +45,16 @@
 
 (defn ensure-style! [mode name-factory style-factory params]
   (let [style-name (name-factory params)
-        {css :css :as info} (apply style-factory style-name params params)]
 
-    (sc/mount-style! *style-container* style-name css)
+        ; TODO: Does this require a re-compile?
+        mounted-info nil
+
+        {css :css :as info} (or
+                              mounted-info
+                              (apply style-factory style-name params params))]
+
+    (when-not mounted-info
+      (sc/mount-style! *style-container* style-name css))
 
     (case mode
       :attrs {:class (compose-names info)}
