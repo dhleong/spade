@@ -46,8 +46,12 @@
 (defn ensure-style! [mode name-factory style-factory params]
   (let [style-name (name-factory params)
 
-        ; TODO: Does this require a re-compile?
-        mounted-info nil
+        ; NOTE: If we've been instructed to always compile css, then always
+        ; assume it's unmounted.
+        ; TODO: support adding this flag as meta on the class, too.
+        mounted-info (when-not (:always-compile-css? *css-compile-flags*)
+                       ; TODO: Does this require a re-compile?
+                       nil)
 
         {css :css :as info} (or
                               mounted-info
