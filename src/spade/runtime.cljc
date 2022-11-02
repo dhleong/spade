@@ -50,13 +50,13 @@
 
         ; NOTE: If we've been instructed to always compile css, then always
         ; assume it's unmounted.
-        ; TODO: support adding this flag as meta on the class, too.
         mounted-info (when-not always-compile?
                        ; TODO: Does this require a re-compile?
                        nil)
 
         {css :css :as info} (or
                               mounted-info
+                              ; TODO Refactor macro to avoid needing to apply
                               (apply style-factory style-name params params))]
 
     (when-not mounted-info
