@@ -123,7 +123,8 @@
       (not has-key-meta?)
       [nil name-var nil nil]
 
-      ; TODO can we use static-key? that might be nice
+      ; okay case: a (nearly) static key that we can pull out and compute
+      ; directly, without building the rest of the style form
       static-key
       [nil name-var key-var
        `[~key-var ~static-key]]

@@ -49,18 +49,18 @@
                             (:always-compile-css? *css-compile-flags*))
 
         ; NOTE: If we've been instructed to always compile css, then always
-        ; assume it's unmounted.
+        ; assume it's unmounted. The container can update a mounted style
         mounted-info (when-not always-compile?
-                       ; TODO: Does this require a re-compile?
-                       nil)
+                       (sc/mounted-info *style-container* style-name))
 
         {css :css :as info} (or
                               mounted-info
+
                               ; TODO Refactor macro to avoid needing to apply
                               (apply style-factory style-name params params))]
 
     (when-not mounted-info
-      (sc/mount-style! *style-container* style-name css))
+      (sc/mount-style! *style-container* style-name css info))
 
     (case mode
       :attrs {:class (compose-names info)}

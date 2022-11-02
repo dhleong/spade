@@ -1,7 +1,8 @@
 (ns spade.runtime.defaults
-  (:require [spade.container.atom :refer [->AtomStyleContainer]]))
+  (:require [spade.container.atom :as atom-container]))
 
 (defonce shared-styles-atom (atom nil))
+(defonce shared-styles-info-atom (atom nil))
 
 (defn create-container []
-  (->AtomStyleContainer shared-styles-atom))
+  (atom-container/create-container shared-styles-atom shared-styles-info-atom))

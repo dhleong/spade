@@ -10,18 +10,19 @@
 (defn- perform-update! [obj css]
   (set! (.-innerHTML (:element obj)) css))
 
-(defn update! [styles-container id css]
+(defn update! [styles-container id css info]
   (swap! styles-container update id
          (fn update-injected-style [obj]
            (when-not (= (:source obj) css)
              (perform-update! obj css))
-           (assoc obj :source css))))
+           (assoc obj :source css :info info))))
 
-(defn inject! [target-dom styles-container id css]
+(defn inject! [target-dom styles-container id css info]
   (let [element (doto (js/document.createElement "style")
                   (.setAttribute "spade-id" (str id)))
         obj {:element element
              :source css
+             :info info
              :id id}]
     (assert (some? target-dom)
             "An <head> element or target DOM is required to inject the style.")
@@ -33,17 +34,22 @@
 
 (deftype DomStyleContainer [target-dom styles]
   IStyleContainer
-  (mount-style! [_ style-name css]
+  (mounted-info [_ style-name]
+    (let [resolved-container (or styles
+                                 *injected-styles*)]
+      (:info (get @resolved-container style-name))))
+
+  (mount-style! [_ style-name css info]
     (let [resolved-container (or styles
                                  *injected-styles*)]
       (if (contains? @resolved-container style-name)
-        (update! resolved-container style-name css)
+        (update! resolved-container style-name css info)
 
         (let [resolved-dom (or (when (ifn? target-dom)
                                  (target-dom))
                                target-dom
                                (.-head js/document))]
-          (inject! resolved-dom resolved-container style-name css))))))
+          (inject! resolved-dom resolved-container style-name css info))))))
 
 (defn create-container
   "Create a DomStyleContainer. With no args, the default is created, which
