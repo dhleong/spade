@@ -231,6 +231,7 @@
   [mode class-name _ name-fn-name factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
                       ~mode
+                      (meta (var ~class-name))
                       ~name-fn-name
                       ~factory-fn-name
                       nil)))
@@ -239,6 +240,7 @@
   `(defn ~class-name []
      (spade.runtime/ensure-style!
        ~mode
+       (meta (var ~class-name))
        ~name-fn-name
        ~factory-fn-name
        nil)))
@@ -255,6 +257,7 @@
        ~raw-params
        (spade.runtime/ensure-style!
          ~mode
+         (meta (var ~class-name))
          ~name-fn-name
          ~factory-fn-name
          ~raw-params))))
@@ -266,6 +269,7 @@
   `(defn ~class-name [& params#]
      (spade.runtime/ensure-style!
        ~mode
+       (meta (var ~class-name))
        ~name-fn-name
        ~factory-fn-name
        params#)))
@@ -275,6 +279,7 @@
   `(defn ~class-name ~params
      (spade.runtime/ensure-style!
        ~mode
+       (meta (var ~class-name))
        ~name-fn-name
        ~factory-fn-name
        ~params)))

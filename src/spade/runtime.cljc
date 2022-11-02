@@ -43,13 +43,15 @@
                             :value item})))))
          (str/join " "))))
 
-(defn ensure-style! [mode name-factory style-factory params]
+(defn ensure-style! [mode metadata name-factory style-factory params]
   (let [style-name (name-factory params)
+        always-compile? (or (:always-compile-css metadata)
+                            (:always-compile-css? *css-compile-flags*))
 
         ; NOTE: If we've been instructed to always compile css, then always
         ; assume it's unmounted.
         ; TODO: support adding this flag as meta on the class, too.
-        mounted-info (when-not (:always-compile-css? *css-compile-flags*)
+        mounted-info (when-not always-compile?
                        ; TODO: Does this require a re-compile?
                        nil)
 
