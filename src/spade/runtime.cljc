@@ -56,8 +56,8 @@
         {css :css :as info} (or
                               mounted-info
 
-                              ; TODO Refactor macro to avoid needing to apply
-                              (apply style-factory style-name params params))]
+                              ; Not mounted *or* we always want to compile
+                              (style-factory style-name params))]
 
     (when-not mounted-info
       (sc/mount-style! *style-container* style-name css info))

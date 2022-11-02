@@ -207,7 +207,7 @@
     (some? (find-key-meta style))
     `(clojure.core/memoize
        (fn [params#]
-         (let [dry-run# (apply ~factory-fn-name nil params# params#)]
+         (let [dry-run# (~factory-fn-name nil params#)]
            (#'build-style-name
              ~factory-name-var
              (::key dry-run#)
@@ -294,11 +294,13 @@
 
         style-name-var (gensym "style-name")
         params-var (gensym "params")
-        factory-params (vec (concat [style-name-var params-var] params))
         factory-name-var (gensym "factory-name")]
     `(do
-       (defn ~factory-fn-name ~factory-params
-         ~(transform-style mode style params style-name-var))
+       (defn ~factory-fn-name [~style-name-var ~params-var]
+         ~(if params
+            `(let [~params ~params-var]
+               ~(transform-style mode style params style-name-var))
+            (transform-style mode style nil style-name-var)))
 
        (let [~factory-name-var (factory->name
                                  (macros/case
