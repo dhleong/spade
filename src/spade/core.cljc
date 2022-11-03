@@ -10,22 +10,24 @@
   (:key (meta (first style))))
 
 (defn- find-key-meta [style]
-  (::key
-    (postwalk
-      (fn [form]
-        (if (and (map? form)
-                 (::key form))
-          form
+  (->> style
 
-          (if-let [k (:key (meta form))]
-            {::key k}
+       (postwalk
+         (fn [form]
+           (if (and (map? form)
+                    (::key form))
+             form
 
-            (if-let [k (when (seq? form)
-                         (some ::key form))]
-              {::key k}
+             (if-let [k (:key (meta form))]
+               {::key k}
 
-              form))))
-      style)))
+               (if-let [k (when (sequential? form)
+                            (some ::key form))]
+                 {::key k}
+
+                 form)))))
+
+       ::key))
 
 (def ^:private auto-imported-at-form?
   #{'at-font-face
@@ -112,7 +114,6 @@
   [style params name-var]
   (let [has-key-meta? (some? (find-key-meta style))
         static-key (extract-key style)
-
         key-var (gensym "key")]
     (cond
       ; easiest case: no params? no need to call build-style-name

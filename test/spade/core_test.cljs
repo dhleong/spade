@@ -154,6 +154,11 @@
    :background color})
 
 (deftest defclass-compose-test
+  (testing "Composing should not break :key naming"
+    (let [generated (composed-factory$ "" ["blue"])]
+      (= "blue"
+          (:spade.core/key generated))))
+
   (testing "computed-key test"
     (is (= "spade-core-test-computed-key_BLUE spade-core-test-composed_blue"
            (composed "blue")))
