@@ -153,25 +153,25 @@
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
         style (->> style prefix-at-media rename-vars)
-        [base-style-var name-var key-var name-let] (build-style-naming-let
-                                                     style params style-name-var)
+        [base-style-var name-var key-var style-naming-let] (build-style-naming-let
+                                                             style params style-name-var)
         style-decl (if base-style-var
                      `(into [(str "." ~name-var)] ~base-style-var)
                      (into [`(str "." ~name-var)] style))]
-    `(let ~(vec (concat name-let
+    `(let ~(vec (concat style-naming-let
                         [style-var style-decl]))
        ~(with-composition composition name-var key-var style-var))))
 
 (defn- transform-keyframes-style [style params style-name-var]
   (let [style (->> style prefix-at-media rename-vars)
-        [style-var name-var key-var style-naming-let] (build-style-naming-let
-                                                        style params style-name-var)
+        [base-style-var name-var key-var style-naming-let] (build-style-naming-let
+                                                             style params style-name-var)
         info-map (cond->
                    `{:css (when ~name-var
                             (spade.runtime/compile-css
                               (garden.stylesheet/at-keyframes
                                 ~name-var
-                                ~(or style-var (vec style)))))
+                                ~(or base-style-var (vec style)))))
                      :name ~name-var}
 
                    key-var (assoc ::key key-var))]
