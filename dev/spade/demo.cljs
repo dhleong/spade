@@ -74,9 +74,7 @@
    [:div (composed-attrs)
     [:div {:class (colorized "red")}]
     [:div {:class (colorized "blue")}]
-    [:div {:class (colorized "green")}]]
-
-   ])
+    [:div {:class (colorized "green")}]]])
 
 (defn view []
   [:div

@@ -1,0 +1,14 @@
+{:linters {:unresolved-symbol {:exclude [(spade.core/defattrs [at-media])
+                                         (spade.core/defclass [at-media])
+                                         (spade.core/defglobal [at-media])
+                                         (spade.core/defkeyframes [at-media])]}
+
+           ; defglobal needs a name to be bound to, but is unlikely to
+           ; actually be referenced anywhere (because it's, y'know, global).
+           ; So we automatically ignore its public vars by default
+           :clojure-lsp/unused-public-var {:exclude-when-defined-by #{spade.core/defglobal}}}
+ :hooks {:expand-macro {spade.core/defglobal hooks.defglobal/as-macro}}
+ :lint-as {spade.core/defattrs clojure.core/defn
+           spade.core/defclass clojure.core/defn
+           spade.core/defglobal clojure.core/def
+           spade.core/defkeyframes clojure.core/defn}}
