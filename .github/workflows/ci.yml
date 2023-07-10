@@ -36,4 +36,4 @@ jobs:
         CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
         CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
       run: |
-        lein deploy clojars
+        lein deploy clojars-ci

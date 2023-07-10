@@ -19,9 +19,9 @@
   :source-paths ["src"]
   :test-paths ["test"]
 
-  :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
-                                    :username :env/clojars_username
-                                    :password :env/clojars_password}]]
+  :deploy-repositories [["clojars-ci" {:url "https://repo.clojars.org"
+                                       :username :env/clojars_username
+                                       :password :env/clojars_password}]]
 
   :jar-exclusions [#"(?:^|\/)public\/"]
 
