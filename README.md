@@ -1,4 +1,4 @@
-# spade [![Build Status](http://img.shields.io/travis/dhleong/spade.svg?style=flat)](https://travis-ci.org/dhleong/spade) [![Clojars Project](https://img.shields.io/clojars/v/net.dhleong/spade.svg?style=flat)](https://clojars.org/net.dhleong/spade) [![cljdoc](https://cljdoc.org/badge/net.dhleong/spade)](https://cljdoc.org/jump/release/net.dhleong/spade)
+# spade [![Clojars Project](https://img.shields.io/clojars/v/net.dhleong/spade.svg?style=flat)](https://clojars.org/net.dhleong/spade) [![cljdoc](https://cljdoc.org/badge/net.dhleong/spade)](https://cljdoc.org/jump/release/net.dhleong/spade)
 
 *A nice tool to use in the Garden*
 
