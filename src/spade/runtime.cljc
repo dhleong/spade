@@ -7,7 +7,9 @@
 
 (defonce ^:dynamic *css-compile-flags*
   {:pretty-print? #? (:cljs goog.DEBUG
-                      :clj false)})
+                      :clj false)
+   :always-compile-css? #? (:cljs goog.DEBUG
+                            :clj false)})
 
 (defonce ^:dynamic *style-container* (defaults/create-container))
 
@@ -41,10 +43,24 @@
                             :value item})))))
          (str/join " "))))
 
-(defn ensure-style! [mode base-style-name factory params]
-  (let [{css :css style-name :name :as info} (apply factory base-style-name params params)]
+(defn ensure-style! [mode metadata name-factory style-factory params]
+  (let [style-name (name-factory params)
+        always-compile? (or (:always-compile-css metadata)
+                            (:always-compile-css? *css-compile-flags*))
 
-    (sc/mount-style! *style-container* style-name css)
+        ; NOTE: If we've been instructed to always compile css, then always
+        ; assume it's unmounted. The container can update a mounted style
+        mounted-info (when-not always-compile?
+                       (sc/mounted-info *style-container* style-name))
+
+        {css :css :as info} (or
+                              mounted-info
+
+                              ; Not mounted *or* we always want to compile
+                              (style-factory style-name params))]
+
+    (when-not mounted-info
+      (sc/mount-style! *style-container* style-name css info))
 
     (case mode
       :attrs {:class (compose-names info)}

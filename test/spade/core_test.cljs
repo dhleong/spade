@@ -138,7 +138,7 @@
 
   (testing "CSS var declaration and usage"
     (let [generated (-> (parameterized-key-frames-factory$
-                          "with-vars" [42] 42)
+                          "with-vars" [42])
                         :css
                         (str/replace #"\s+" " "))]
       (is (str/includes?
@@ -154,11 +154,16 @@
    :background color})
 
 (deftest defclass-compose-test
+  (testing "Composing should not break :key naming"
+    (let [generated (composed-factory$ "" ["blue"])]
+      (= "blue"
+          (:spade.core/key generated))))
+
   (testing "computed-key test"
     (is (= "spade-core-test-computed-key_BLUE spade-core-test-composed_blue"
            (composed "blue")))
 
-    (let [generated (:css (composed-factory$ "" ["blue"] "blue"))]
+    (let [generated (:css (composed-factory$ "" ["blue"]))]
       (is (false? (str/includes? generated
                                  "color:")))
       (is (false? (str/includes? generated
@@ -179,7 +184,7 @@
            (-> (composed-list "blue")
                (str/split #" "))))
 
-    (let [generated (:css (composed-list-factory$ "" ["blue"] "blue"))]
+    (let [generated (:css (composed-list-factory$ "" ["blue"]))]
       (is (false? (str/includes? generated
                                 "color:")))
       (is (false? (str/includes? generated
@@ -202,7 +207,7 @@
     (is (= "spade-core-test-computed-key_BLUE spade-core-test-composed-attrs_blue"
            (:class (composed-attrs "blue"))))
 
-    (let [generated (:css (composed-attrs-factory$ "" ["blue"] "blue"))]
+    (let [generated (:css (composed-attrs-factory$ "" ["blue"]))]
       (is (false? (str/includes? generated
                                  "color:")))
       (is (false? (str/includes? generated
@@ -216,7 +221,7 @@
             "spade-core-test-compose-ception"]
            (str/split (compose-ception) #" ")))
 
-    (let [generated (:css (composed-attrs-factory$ "" ["blue"] "blue"))]
+    (let [generated (:css (composed-attrs-factory$ "" ["blue"]))]
       (is (false? (str/includes? generated
                                  "color:")))
       (is (false? (str/includes? generated
