@@ -1,0 +1,65 @@
+#!/usr/bin/env bb
+#_{:clj-kondo/ignore [:namespace-name-mismatch]}
+(ns release
+  (:require
+   [babashka.deps :as deps]
+   [clojure.string :as str]))
+
+(deps/add-deps '{:deps {com.github.dhleong/clj-hostage
+                        {:git/sha "c0b5700ad375eba3ece23c5ed622f65f61f00da9"}}})
+(require '[hostage.expect :as expect]
+         '[hostage.file :as file]
+         '[hostage.flow :as flow]
+         '[hostage.git :as git]
+         '[hostage.github :as github]
+         '[hostage.update-notes :as update-notes])
+
+(defn build-default-notes [latest-tag]
+  (update-notes/build
+   (update-notes/github-closed-issues-by-label
+    {:since-tag latest-tag})
+
+   ; Gather notes from commit messages that aren't already
+   ; referencing the issues above
+   (update-notes/with-header "**Notes:**"
+     (update-notes/git-messages-matching
+      {:invert-grep ["Fix #", "Fixes #", "Closes #"]
+       :since-tag latest-tag}))))
+
+(flow/main
+ (let [latest-tag (git/tag-latest {:branch "main"})
+       notes (file/named ".last-release-notes")
+
+       version (->> (file/content "project.clj")
+                    (re-find #"defproject net.dhleong/spade \"(.*)\"")
+                    (second)
+                    (expect/>>some? "Unable to extract project version"))
+       version-tag (git/tag version)]
+
+   (expect/falsey? (str/ends-with? version "SNAPSHOT")
+                   (str "Refusing to release SNAPSHOT version - got " version))
+
+   (expect/falsey? (git/tag-exists? version-tag)
+                   (str "Version " version " already exists"))
+
+   (file/edit notes {:build-initial-content (partial build-default-notes latest-tag)
+                     :delete-before-editing? true
+                     :ensure-created? true})
+
+   (flow/with-step {:name "Verify tests"
+                    :always-run? true
+                    :tag :tests}
+     (flow/shell "lein test"))
+
+   (flow/with-step "Deploy to clojars"
+     (flow/shell "lein deploy clojars"))
+
+   (flow/with-step "Upload to Github"
+     (let [notes (file/content notes)
+           release (github/release version)]
+       (git/tag-create version-tag)
+       (git/tag-push version-tag "origin")
+
+       (github/release-create release {:body notes})))
+
+   (flow/summary "Done! Published " version)))
