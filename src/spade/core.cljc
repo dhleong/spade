@@ -2,7 +2,8 @@
   #?(:cljs (:require-macros [net.cgrand.macrovich :as macros]))
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk prewalk]]
-            #?@(:clj [[net.cgrand.macrovich :as macros]
+            #?@(:clj [[garden.stylesheet]
+                      [net.cgrand.macrovich :as macros]
                       [spade.runtime]])
             [spade.util :refer [factory->name build-style-name]]))
 
@@ -13,19 +14,19 @@
   (->> style
 
        (postwalk
-         (fn [form]
-           (if (and (map? form)
-                    (::key form))
-             form
+        (fn [form]
+          (if (and (map? form)
+                   (::key form))
+            form
 
-             (if-let [k (:key (meta form))]
-               {::key k}
+            (if-let [k (:key (meta form))]
+              {::key k}
 
-               (if-let [k (when (sequential? form)
-                            (some ::key form))]
-                 {::key k}
+              (if-let [k (when (sequential? form)
+                           (some ::key form))]
+                {::key k}
 
-                 form)))))
+                form)))))
 
        ::key))
 
@@ -37,13 +38,13 @@
 
 (defn- replace-at-forms [style]
   (postwalk
-    (fn [element]
-      (if (and (symbol? element)
-             (auto-imported-at-form? element))
-        (symbol "garden.stylesheet" (name element))
+   (fn [element]
+     (if (and (symbol? element)
+              (auto-imported-at-form? element))
+       (symbol "garden.stylesheet" (name element))
 
-        element))
-    style))
+       element))
+   style))
 
 (defn- clean-property-name [n]
   (when n
@@ -62,31 +63,31 @@
                   (clean-property-name (namespace element))
                   "--"
                   (clean-property-name
-                    (subs n 1 (dec (count n))))))))
+                   (subs n 1 (dec (count n))))))))
 
 (defn- varify-val [element]
   `(spade.runtime/->css-var ~(varify-key element)))
 
 (defn- rename-vars [style]
   (prewalk
-    (fn [element]
-      (cond
-        (map-entry? element)
-        (let [var-key? (css-var? (key element))
-              var-val? (css-var? (val element))]
-          (if (or var-key? var-val?)
-            (-> element
-                (update 0 (if var-key? varify-key identity))
-                (update 1 (if var-val? varify-val identity)))
+   (fn [element]
+     (cond
+       (map-entry? element)
+       (let [var-key? (css-var? (key element))
+             var-val? (css-var? (val element))]
+         (if (or var-key? var-val?)
+           (-> element
+               (update 0 (if var-key? varify-key identity))
+               (update 1 (if var-val? varify-val identity)))
 
-            element))
+           element))
 
-        (css-var? element)
-        (varify-val element)
+       (css-var? element)
+       (varify-val element)
 
-        :else
-        element))
-    style))
+       :else
+       element))
+   style))
 
 (defn- extract-composes [style]
   (if-let [composes (when (map? (first style))
@@ -101,9 +102,9 @@
 
 (defn- with-composition [composition name-var key-var style-var]
   (let [base (cond->
-               {:css `(when ~name-var
-                        (spade.runtime/compile-css ~style-var))
-                :name name-var}
+              {:css `(when ~name-var
+                       (spade.runtime/compile-css ~style-var))
+               :name name-var}
 
                key-var (assoc ::key key-var))]
     (if composition
@@ -139,22 +140,22 @@
 
 (defn- prefix-at-media [style]
   (postwalk
-    (fn [form]
-      (if (and (list? form)
-               (= 'garden.stylesheet/at-media (first form)))
-        (let [[sym media-map & body] form]
-          `(~sym ~media-map
+   (fn [form]
+     (if (and (list? form)
+              (= 'garden.stylesheet/at-media (first form)))
+       (let [[sym media-map & body] form]
+         `(~sym ~media-map
                 [:& ~@body]))
 
-        form))
-    style))
+       form))
+   style))
 
 (defn- transform-named-style [style params style-name-var]
   (let [[composition style] (extract-composes style)
         style-var (gensym "style")
         style (->> style prefix-at-media rename-vars)
         [base-style-var name-var key-var style-naming-let] (build-style-naming-let
-                                                             style params style-name-var)
+                                                            style params style-name-var)
         style-decl (if base-style-var
                      `(into [(str "." ~name-var)] ~base-style-var)
                      (into [`(str "." ~name-var)] style))]
@@ -165,14 +166,14 @@
 (defn- transform-keyframes-style [style params style-name-var]
   (let [style (->> style prefix-at-media rename-vars)
         [base-style-var name-var key-var style-naming-let] (build-style-naming-let
-                                                             style params style-name-var)
+                                                            style params style-name-var)
         info-map (cond->
-                   `{:css (when ~name-var
-                            (spade.runtime/compile-css
-                              (garden.stylesheet/at-keyframes
-                                ~name-var
-                                ~(or base-style-var (vec style)))))
-                     :name ~name-var}
+                  `{:css (when ~name-var
+                           (spade.runtime/compile-css
+                            (garden.stylesheet/at-keyframes
+                             ~name-var
+                             ~(or base-style-var (vec style)))))
+                    :name ~name-var}
 
                    key-var (assoc ::key key-var))]
 
@@ -207,19 +208,19 @@
     ; probably not a big deal for now. Would be a nice optimization, however.
     (some? (find-key-meta style))
     `(clojure.core/memoize
-       (fn [params#]
-         (let [dry-run# (~factory-fn-name nil params#)]
-           (#'build-style-name
-             ~factory-name-var
-             (::key dry-run#)
-             params#))))
+      (fn [params#]
+        (let [dry-run# (~factory-fn-name nil params#)]
+          (#'build-style-name
+           ~factory-name-var
+           (::key dry-run#)
+           params#))))
 
     :else
     `(clojure.core/memoize
-       (partial
-         #'build-style-name
-         ~factory-name-var
-         nil))))
+      (partial
+       #'build-style-name
+       ~factory-name-var
+       nil))))
 
 (defmulti ^:private declare-style
   (fn [mode _class-name params _name-fn-name _factory-fn-name]
@@ -232,20 +233,20 @@
 (defmethod declare-style :static
   [mode class-name _ name-fn-name factory-fn-name]
   `(def ~class-name (spade.runtime/ensure-style!
-                      ~mode
-                      (meta (var ~class-name))
-                      ~name-fn-name
-                      ~factory-fn-name
-                      nil)))
+                     ~mode
+                     (meta (var ~class-name))
+                     ~name-fn-name
+                     ~factory-fn-name
+                     nil)))
 (defmethod declare-style :no-args
   [mode class-name _ name-fn-name factory-fn-name]
   `(defn ~class-name []
      (spade.runtime/ensure-style!
-       ~mode
-       (meta (var ~class-name))
-       ~name-fn-name
-       ~factory-fn-name
-       nil)))
+      ~mode
+      (meta (var ~class-name))
+      ~name-fn-name
+      ~factory-fn-name
+      nil)))
 (defmethod declare-style :destructured
   [mode class-name params name-fn-name factory-fn-name]
   ; good case; since there's no variadic args, we can generate an :arglists
@@ -258,11 +259,11 @@
        {:arglists (quote ~(list params))}
        ~raw-params
        (spade.runtime/ensure-style!
-         ~mode
-         (meta (var ~class-name))
-         ~name-fn-name
-         ~factory-fn-name
-         ~raw-params))))
+        ~mode
+        (meta (var ~class-name))
+        ~name-fn-name
+        ~factory-fn-name
+        ~raw-params))))
 (defmethod declare-style :variadic
   [mode class-name _params name-fn-name factory-fn-name]
   ; dumb case; with a variadic params vector, any :arglists we
@@ -270,21 +271,21 @@
   ; and pass the list as-is
   `(defn ~class-name [& params#]
      (spade.runtime/ensure-style!
-       ~mode
-       (meta (var ~class-name))
-       ~name-fn-name
-       ~factory-fn-name
-       params#)))
+      ~mode
+      (meta (var ~class-name))
+      ~name-fn-name
+      ~factory-fn-name
+      params#)))
 (defmethod declare-style :default
   [mode class-name params name-fn-name factory-fn-name]
   ; best case; simple params means we can use them directly
   `(defn ~class-name ~params
      (spade.runtime/ensure-style!
-       ~mode
-       (meta (var ~class-name))
-       ~name-fn-name
-       ~factory-fn-name
-       ~params)))
+      ~mode
+      (meta (var ~class-name))
+      ~name-fn-name
+      ~factory-fn-name
+      ~params)))
 
 (defn- declare-style-fns [mode class-name params style]
   {:pre [(symbol? class-name)
@@ -304,12 +305,12 @@
             (transform-style mode style nil style-name-var)))
 
        (let [~factory-name-var (factory->name
-                                 (macros/case
-                                   :cljs ~factory-fn-name
-                                   :clj (var ~factory-fn-name)))
+                                (macros/case
+                                 :cljs ~factory-fn-name
+                                 :clj (var ~factory-fn-name)))
 
              ~style-name-fn-name ~(generate-style-name-fn
-                                    factory-fn-name factory-name-var style params)]
+                                   factory-fn-name factory-name-var style params)]
 
          ~(declare-style mode class-name params style-name-fn-name factory-fn-name)))))
 
@@ -379,7 +380,7 @@
 
 (defmacro with-styles-container [container & body]
   (macros/case
-    :cljs `(binding [spade.runtime/*style-container* ~container]
-             ~@body)
-    :clj `(with-bindings {#'spade.runtime/*style-container* ~container}
-            ~@body)))
+   :cljs `(binding [spade.runtime/*style-container* ~container]
+            ~@body)
+   :clj `(with-bindings {#'spade.runtime/*style-container* ~container}
+           ~@body)))
