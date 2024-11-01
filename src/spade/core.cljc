@@ -5,7 +5,8 @@
             #?@(:clj [[garden.stylesheet]
                       [net.cgrand.macrovich :as macros]
                       [spade.runtime]])
-            [spade.util :refer [factory->name build-style-name]]))
+            [spade.util :refer [factory->name build-style-name
+                                unpack-keyframes-nesting]]))
 
 (defn- extract-key [style]
   (:key (meta (first style))))
@@ -169,10 +170,16 @@
                                                             style params style-name-var)
         info-map (cond->
                   `{:css (when ~name-var
-                           (spade.runtime/compile-css
-                            (garden.stylesheet/at-keyframes
-                             ~name-var
-                             ~(or base-style-var (vec style)))))
+                           ~(if base-style-var
+                              `(spade.runtime/compile-css
+                                (apply garden.stylesheet/at-keyframes
+                                       ~name-var
+                                       (#'unpack-keyframes-nesting ~base-style-var)))
+                              `(spade.runtime/compile-css
+                                (garden.stylesheet/at-keyframes
+                                  ~name-var
+                                  ~@style))))
+                    :style ~(str (vec style))
                     :name ~name-var}
 
                    key-var (assoc ::key key-var))]
