@@ -8,7 +8,7 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.520"]
-                 [garden "1.3.10"]
+                 [com.lambdaisland/garden "1.5.569"]
                  [net.cgrand/macrovich "0.2.1"]]
 
   :plugins [[lein-figwheel "0.5.19"]

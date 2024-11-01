@@ -49,3 +49,18 @@
 
     ; easiest case: no key is necessary
     :else base))
+
+(defn unpack-keyframes-nesting
+  "In the latest versions of garden, using [:&] to return multiple
+   style rules from within a conditional or other structure like
+   `(let)` in an `(at-keyframes)` structure keeps that `&` in the
+   output CSS. This function 'unpacks' such structures so the compiled CSS is clean."
+  [style-rules]
+  (mapcat
+   (fn maybe-unpack-keyframes-nesting [style-rule]
+     (if (and (vector? style-rule)
+              (= :& (first style-rule)))
+       (next style-rule)
+       [style-rule]))
+   style-rules))
+
