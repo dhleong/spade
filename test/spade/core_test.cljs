@@ -56,25 +56,24 @@
                         :css
                         (str/replace #"\s+" " "))]
       (is (str/includes?
-            generated
-            (str "@media (max-width: 50px) { "
-                 ".with-media { background: blue; } "
-                 ".with-media .nested { background: red; }")))))
+           generated
+           (str "@media (max-width: 50px) { "
+                ".with-media { background: blue; } "
+                ".with-media .nested { background: red; }")))))
 
   (testing "CSS var declaration and usage"
     (let [generated (-> (class-with-vars-factory$ "class-with-vars" [])
                         :css
                         (str/replace #"\s+" " "))]
       (is (str/includes?
-            generated
-            (str ".class-with-vars {"
-                 " --my-var: 42pt;"
-                 " --spade-core-test--namespaced: blue;"
-                 " font-size: var(--my-var);"
-                 " background: var(--spade-core-test--namespaced);"
-                 " color: var(--my-var) !important;"
-                 " }"))))))
-
+           generated
+           (str ".class-with-vars {"
+                " --my-var: 42pt;"
+                " --spade-core-test--namespaced: blue;"
+                " font-size: var(--my-var);"
+                " background: var(--spade-core-test--namespaced);"
+                " color: var(--my-var) !important;"
+                " }"))))))
 
 (defattrs fixed-style-attrs []
   {:*my-var* "blue"
@@ -90,12 +89,11 @@
                         :css
                         (str/replace #"\s+" " "))]
       (is (str/includes?
-            generated
-            (str ".with-vars {"
-                 " --my-var: blue;"
-                 " color: var(--my-var);"
-                 " }"))))))
-
+           generated
+           (str ".with-vars {"
+                " --my-var: blue;"
+                " color: var(--my-var);"
+                " }"))))))
 
 (defglobal global-1
   [":root" {:*background* "blue"}]
@@ -114,16 +112,16 @@
 
   (testing "Support at-media automatically"
     (is (str/starts-with?
-          global-2
-          "@media (min-width: 42px) {"))))
-
+         global-2
+         "@media (min-width: 42px) {"))))
 
 (defkeyframes key-frames []
   [:from {:opacity 0}])
 
 (defkeyframes parameterized-key-frames [from]
   [:from {::*from* from
-          :opacity ::*from*}])
+          :opacity ::*from*}]
+  [:to {:opacity 1}])
 
 (deftest defkeyframes-test
   (testing "Return keyframes name from defkeyframes"
@@ -138,15 +136,18 @@
 
   (testing "CSS var declaration and usage"
     (let [generated (-> (parameterized-key-frames-factory$
-                          "with-vars" [42])
+                         "with-vars" [42])
                         :css
                         (str/replace #"\s+" " "))]
       (is (str/includes?
-            generated
-            (str "from {"
-                 " --spade-core-test--from: 42;"
-                 " opacity: var(--spade-core-test--from);"
-                 " }"))))))
+           generated
+           (str "from {"
+                " --spade-core-test--from: 42;"
+                " opacity: var(--spade-core-test--from);"
+                " }")))
+      (is (str/includes?
+           generated
+           (str "to { opacity: 1; }"))))))
 
 (defclass composed [color]
   ^{:key color}
@@ -186,12 +187,11 @@
 
     (let [generated (:css (composed-list-factory$ "" ["blue"]))]
       (is (false? (str/includes? generated
-                                "color:")))
+                                 "color:")))
       (is (false? (str/includes? generated
-                                "composes:")))
+                                 "composes:")))
       (is (true? (str/includes? generated
                                 "background:"))))))
-
 
 (defattrs composed-attrs [color]
   ^{:key color}
