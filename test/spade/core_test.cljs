@@ -10,7 +10,9 @@
          composed-factory$
          composed-list-factory$
          composed-attrs-factory$
-         parameterized-key-frames-factory$)
+         parameterized-key-frames-factory$
+         complex-keyframes-factory$
+         multi-complex-keyframes-factory$)
 
 (defclass computed-key [color]
   ^{:key (str/upper-case color)}
@@ -123,6 +125,29 @@
           :opacity ::*from*}]
   [:to {:opacity 1}])
 
+(defkeyframes complex-keyframes [from]
+  (let [k (* 2 from)]
+    ^{:key k}
+    ; NOTE: This :& form is not *really* supported by garden's
+    ; (at-keyframes) function, but it is a familiar syntax for
+    ; the other def* forms, so let's make it work here so we can
+    ; support complex forms with a shared computation.
+    [:&
+     [:from {::*from* from
+             :opacity ::*from*}]
+     [:to {:opacity 1}]]))
+
+(defkeyframes multi-complex-keyframes [from]
+  (let [k (* 2 from)]
+    ^{:key k}
+    ; NOTE: This :& form is not *really* supported by garden's
+    ; (at-keyframes) function, but it is a familiar syntax for
+    ; the other def* forms, so let's make it work here so we can
+    ; support complex forms with a shared computation.
+    [:from {::*from* from
+            :opacity ::*from*}])
+  [:to {:opacity 1}])
+
 (deftest defkeyframes-test
   (testing "Return keyframes name from defkeyframes"
     (is (fn? key-frames))
@@ -133,6 +158,14 @@
     (is (fn? key-frames))
     (is (= (str "spade-core-test-parameterized-key-frames_" (hash [0]))
            (parameterized-key-frames 0))))
+
+  (testing "Return dynamic name for complex defkeyframes"
+    (is (fn? complex-keyframes))
+    (is (fn? multi-complex-keyframes))
+    (is (= (str "spade-core-test-complex-keyframes_84")
+           (complex-keyframes 42)))
+    (is (= (str "spade-core-test-multi-complex-keyframes_84")
+           (multi-complex-keyframes 42))))
 
   (testing "CSS var declaration and usage"
     (let [generated (-> (parameterized-key-frames-factory$
@@ -147,7 +180,28 @@
                 " }")))
       (is (str/includes?
            generated
-           (str "to { opacity: 1; }"))))))
+           (str "to { opacity: 1; }")))))
+
+  (testing "CSS var declaration and usage within a block"
+    ; NOTE: The styles generated should be identical to above
+    (let [generated (-> (complex-keyframes-factory$
+                         "with-vars" [42])
+                        :css
+                        (str/replace #"\s+" " "))
+          multi-generated (-> (multi-complex-keyframes-factory$
+                               "with-vars" [42])
+                              :css
+                              (str/replace #"\s+" " "))]
+      (is (str/includes?
+           generated
+           (str "from {"
+                " --spade-core-test--from: 42;"
+                " opacity: var(--spade-core-test--from);"
+                " }")))
+      (is (str/includes?
+           generated
+           (str "to { opacity: 1; }")))
+      (is (= generated multi-generated)))))
 
 (defclass composed [color]
   ^{:key color}
