@@ -1,0 +1,1 @@
+{:cljfmt {:extra-indents {#re "^at-" [[:inner 0]]}}}
