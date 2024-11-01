@@ -179,7 +179,6 @@
                                 (garden.stylesheet/at-keyframes
                                   ~name-var
                                   ~@style))))
-                    :style ~(str (vec style))
                     :name ~name-var}
 
                    key-var (assoc ::key key-var))]
