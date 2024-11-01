@@ -227,7 +227,7 @@ and you should see an alert in the browser window.
 
 ## License
 
-Copyright © 2019 Daniel Leong
+Copyright © 2019-2024 Daniel Leong
 
 Distributed under the Eclipse Public License either version 1.0
 
